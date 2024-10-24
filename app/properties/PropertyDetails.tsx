@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import Tippy from '@tippyjs/react';
-import 'tippy.js/dist/tippy.css';
+import AddressTable from '@/components/AddressTable'; // Import the PropertyForm component
+import PropertyForm from '@/components/PropertyForm';
 
 interface Property {
   id: string;
@@ -13,7 +13,7 @@ interface Property {
   yieldRate: number;
   dscr: number;
   opportunity: string;
-  image: string;
+  image: string | null; // Allow image to be string or null
 }
 
 interface PropertyDetailsProps {
@@ -23,24 +23,56 @@ interface PropertyDetailsProps {
 const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId }) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [addresses, setAddresses] = useState([
+    {
+      propertyName: 'Money Maker',
+      type: 'Residential',
+      address: '123 Main St, Anytown, USA',
+      noi: 50000,
+      value: 250000,
+      leverage: 0.75,
+      yieldRate: 0.05,
+      dscr: 1.25,
+      opportunity: 'High Growth'
+    },
+    {
+      propertyName: 'Red Headed Child',
+      type: 'Commercial',
+      address: '456 Maple Ave, Springfield, USA',
+      noi: 100000,
+      value: 500000,
+      leverage: 0.65,
+      yieldRate: 0.08,
+      dscr: 1.50,
+      opportunity: 'Moderate Growth'
+    }
+  ]);
 
+  // Fetch the property data from a JSON file and set the selected property
   useEffect(() => {
-    // Fetch the property data from the JSON file
     fetch('/property/property.json')
       .then((response) => response.json())
       .then((data) => {
         setProperties(data);
         const property = data.find((p: Property) => p.id === selectedPropertyId);
-        setSelectedProperty(property || data[0]); // Set the default property if not found
+        setSelectedProperty(property || data[0]); // Default to the first property if not found
       })
       .catch((error) => console.error('Error loading properties:', error));
   }, [selectedPropertyId]);
+
+  const handleAddNewAddress = (newAddress: Property) => {
+    setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
+  };
+
+  const handleRemoveAddress = (index: number) => {
+    setAddresses((prevAddresses) => prevAddresses.filter((_, i) => i !== index));
+  };
 
   if (!selectedProperty) return <div>Loading property details...</div>;
 
   return (
     <div className="property-details">
-      {/* Dropdown to select properties */}
+      {/* Property selector */}
       <div className="property-selector">
         <label>Commercial Properties: </label>
         <select
@@ -57,60 +89,33 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId })
           ))}
         </select>
       </div>
+
+      {/* Property Header */}
       <div className="property-header">
-        <img src={selectedProperty.image} alt={selectedProperty.propertyName} className="property-image" />
+        {selectedProperty.image ? (
+          <img src={selectedProperty.image} alt={selectedProperty.propertyName} className="property-image" />
+        ) : (
+          <div className="no-image">No Image Available</div> // Fallback if image is null
+        )}
         <div className="property-info">
           <h2>{selectedProperty.propertyName}</h2>
           <p className="property-type">{selectedProperty.type}</p>
           <p className="property-address">{selectedProperty.address}</p>
         </div>
       </div>
+        {/* Address Table to display saved properties */}
+        <div className="table-section">
+          <AddressTable addresses={addresses} onRemove={handleRemoveAddress} />
+        </div>
+    
 
-      <div className="property-stats">
-        <div className="stat">
-          <p>NOI</p>
-          <h3>{selectedProperty.noi.toLocaleString()}</h3>
-          <Tippy content="Net Operating Income">
-            <span className="info-icon">ℹ️</span>
-          </Tippy>
-        </div>
-        <div className="stat">
-          <p>Value</p>
-          <h3>${selectedProperty.value.toLocaleString()}</h3>
-          <Tippy content="The total market value of the property">
-            <span className="info-icon">ℹ️</span>
-          </Tippy>
-        </div>
-        <div className="stat">
-          <p>Leverage</p>
-          <h3>{(selectedProperty.leverage * 100).toFixed(2)}%</h3>
-          <Tippy content="The percentage of the property value that is leveraged by loans">
-            <span className="info-icon">ℹ️</span>
-          </Tippy>
-        </div>
-        <div className="stat">
-          <p>Yield Rate</p>
-          <h3>{(selectedProperty.yieldRate * 100).toFixed(2)}%</h3>
-          <Tippy content="Annual income (NOI) divided by property value">
-            <span className="info-icon">ℹ️</span>
-          </Tippy>
-        </div>
-        <div className="stat">
-          <p>DSCR</p>
-          <h3>{selectedProperty.dscr.toFixed(2)}</h3>
-          <Tippy content="Debt Service Coverage Ratio: NOI divided by total debt service">
-            <span className="info-icon">ℹ️</span>
-          </Tippy>
-        </div>
-        <div className="stat">
-          <p>Opportunity</p>
-          <h3>{selectedProperty.opportunity}</h3>
-          <Tippy content="Describes the growth or investment opportunity for this property">
-            <span className="info-icon">ℹ️</span>
-          </Tippy>
-        </div>
+      {/* Property Form to add new properties */}
+      <div className="form-section">
+        <h3>Add New Property</h3>
+        <PropertyForm onAddNewAddress={handleAddNewAddress} />
       </div>
 
+      {/* Styling for the component */}
       <style jsx>{`
         .property-details {
           background-color: #fff;
@@ -130,6 +135,18 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId })
           width: 150px;
           height: 150px;
           object-fit: cover;
+          border-radius: 8px;
+          margin-right: 20px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-image {
+          width: 150px;
+          height: 150px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background-color: #f0f0f0;
           border-radius: 8px;
           margin-right: 20px;
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
@@ -179,6 +196,19 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId })
         .property-selector {
           margin-top: 5px;
           margin-bottom: 25px;
+        }
+
+        .form-section {
+          margin-top: 20px;
+        }
+
+        .table-section {
+          width: 100%;
+          overflow-x: auto; /* Enable horizontal scrolling */
+          overflow-y: auto; /* Enable vertical scrolling */
+          max-height: 400px; /* Set a max height for vertical scrolling */
+          display: flex;
+          justify-content: center;
         }
 
         @media (max-width: 768px) {

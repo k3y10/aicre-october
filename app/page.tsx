@@ -52,7 +52,7 @@ type Address = {
 
 // Tools for the dashboard with updated icons
 const tools = [
-  { id: 1, name: 'PropertyDetails', label: 'Property Details', icon: BarChartIcon, active: true },
+  { id: 1, name: 'PropertyDetails', label: 'Property Details', icon: BarChartIcon, active: false },
 ]; 
 
 const sideMenuTools = [
@@ -338,8 +338,8 @@ const DashboardAiCRE: React.FC = () => {
 
       <div className="main-content">
         <div className="header">
-          <StockTicker/>
           <div className="portfolio-summary mt-4">
+          <StockTicker/>
           {renderActiveTool()}
           <h3>Portfolio Summary</h3>
           <PortfolioSummary totalValue={totalValue} totalNOI={totalNOI} totalLeverage={totalLeverage} />

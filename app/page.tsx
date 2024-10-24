@@ -15,10 +15,14 @@ import {
   UserGearIcon,
   SignOutIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  Tools,
+  Info,
+  House,
+  Shop,
+  Mountain
 } from '@/components/icons';
 import PropertyDetails from './properties/PropertyDetails';
-import PlanningTools from './planning/PlanningTools';
 import DataRoom from './data/data-room';
 import NewsTable from '@/components/NewsTable';
 import DataUpload from '@/components/DataUpload';
@@ -28,6 +32,11 @@ import PortfolioSummary from '@/components/PortfolioSummary';
 import AddressTable from '@/components/AddressTable';
 import PropertyForm from '@/components/PropertyForm';
 import DataVisual from '@/components/DataVisual';
+import CapTable from './planning/CapTable';
+import Forecaster from './tools/Forecaster';
+import SREOTable from './planning/SREOTable';
+import StressTester from './planning/StressTester';
+import StockTicker from '@/components/StockTicker';
 
 type Address = {
   propertyName: string;
@@ -43,25 +52,22 @@ type Address = {
 
 // Tools for the dashboard with updated icons
 const tools = [
-  { id: 4, name: 'NewsTable', label: 'Market News', icon: BarChartIcon, active: true },
-];
+  { id: 1, name: 'PropertyDetails', label: 'Property Details', icon: BarChartIcon, active: true },
+]; 
 
 const sideMenuTools = [
-  { id: 5, name: 'DataUpload', label: 'Property Details', icon: BuildingIcon, active: true },
-  { id: 6, name: 'ShareDashboardModal', label: 'Planning Tools', icon: ChecklistIcon, active: true },
   { id: 7, name: 'UpgradePlanModal', label: 'Data Room', icon: FileUpload, active: true },
 ];
 
 // Categories for filtering tools
 const categories = {
   ALL: tools.map((tool) => tool.name),
-  RESIDENTIAL: ['PropertyDetails', 'PlanningTools'],
+  RESIDENTIAL: ['PropertyDetails'],
   COMMERCIAL: ['DataRoom'],
-  FINANCE: ['PlanningTools', 'NewsTable'],
+  FINANCE: ['NewsTable'],
 };
 
 const DashboardAiCRE: React.FC = () => {
-  const [manualAddress, setManualAddress] = useState<string>('');
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [filteredTools, setFilteredTools] = useState<string[]>(categories.ALL);
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
@@ -71,6 +77,8 @@ const DashboardAiCRE: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false); 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(false); // State for toggling form visibility
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('property1'); // default property ID
+
   const [addresses, setAddresses] = useState([
     {
       propertyName: 'Money Maker',
@@ -143,6 +151,12 @@ const DashboardAiCRE: React.FC = () => {
     setActiveTool(null);
   };
 
+   // Handle property selection from the sidebar
+   const handlePropertySelect = (propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+  };
+
+
     // Function to toggle the visibility of the form
   const toggleFormVisibility = () => {
     setIsFormVisible((prevState) => !prevState);
@@ -160,16 +174,51 @@ const DashboardAiCRE: React.FC = () => {
   };
 
   const { totalValue, totalNOI, totalLeverage } = calculateSummary();
+  const property1 = {
+    propertyName: 'Money Maker',
+    type: 'Residential',
+    address: '123 Main St, Anytown, USA',
+    noi: 50000,
+    value: 250000,
+    leverage: 0.75,
+    yieldRate: 0.05,
+    dscr: 1.25,
+    opportunity: 'High Growth',
+  };
 
+  const property2 = {
+    propertyName: 'Red Headed Child',
+    type: 'Commercial',
+    address: '456 Maple Ave, Springfield, USA',
+    noi: 100000,
+    value: 500000,
+    leverage: 0.65,
+    yieldRate: 0.08,
+    dscr: 1.50,
+    opportunity: 'Moderate Growth',
+  };
+
+  const property3 = {
+    propertyName: 'Blue Sky Plaza',
+    type: 'Retail',
+    address: '789 Broadway, Metropolis, USA',
+    noi: 75000,
+    value: 400000,
+    leverage: 0.7,
+    yieldRate: 0.06,
+    dscr: 1.35,
+    opportunity: 'Steady Growth',
+  };
+
+  const selectedProperty = property1; // You can toggle between property1, property2, property3
 
   const renderActiveTool = () => {
     const tool = tools.find((t) => t.name === activeTool);
     if (tool) {
       switch (tool.name) {
         case 'PropertyDetails':
-          return <PropertyDetails />;
-        case 'PlanningTools':
-          return <PlanningTools />;
+          return   <PropertyDetails selectedPropertyId={selectedPropertyId} />
+          ; // Pass the selected property
         case 'DataRoom':
           return <DataRoom />;
         case 'NewsTable':
@@ -221,7 +270,7 @@ const DashboardAiCRE: React.FC = () => {
               <CogIcon />
             </button>
             {/* Avatar image (purely visual, no onClick action here) */}
-            <Image src="/avatar.png" alt="avatar" width={100} height={100} className="profile-image" />
+            <Image src="/aicre-circle.png" alt="avatar" width={100} height={100} className="profile-image" />
           </div>
 
         {/* Render Profile component conditionally */}
@@ -231,25 +280,28 @@ const DashboardAiCRE: React.FC = () => {
 
         <ul className="sub-menu-toggle" onClick={toggleSubMenu1}>
             <li>
-             Property Details {isSubMenuOpen1 ? <ChevronUpIcon /> : <ChevronDownIcon />}
+            <Info/>Property Type {isSubMenuOpen1 ? <ChevronUpIcon /> : <ChevronDownIcon />}
             </li>
           </ul>
           {isSubMenuOpen1  && (
             <ul className="sub-menu">
               <li onClick={() => handleToolClick('PropertyDetails')}>
-                <BuildingIcon /> Property 1
+                <BuildingIcon /> Commercial
               </li>
               <li onClick={() => handleToolClick('PlanningTools')}>
-                <ChecklistIcon /> Property 2
+                <House /> Resedentail
               </li>
               <li onClick={() => handleToolClick('DataRoom')}>
-                <FileUpload /> Property 3
+                <Mountain /> Recreational
+              </li>
+              <li onClick={() => handleToolClick('DataRoom')}>
+                <Shop /> Retail
               </li>
             </ul>
           )}
           <ul className="sub-menu-toggle" onClick={toggleSubMenu2}>
             <li>
-             Planning Tools {isSubMenuOpen2 ? <ChevronUpIcon /> : <ChevronDownIcon />}
+             <Tools/> Property Tools {isSubMenuOpen2 ? <ChevronUpIcon /> : <ChevronDownIcon />}
             </li>
           </ul>
           {isSubMenuOpen2 && (
@@ -286,7 +338,9 @@ const DashboardAiCRE: React.FC = () => {
 
       <div className="main-content">
         <div className="header">
-          <div className="portfolio-summary">
+          <StockTicker/>
+          <div className="portfolio-summary mt-4">
+          {renderActiveTool()}
           <h3>Portfolio Summary</h3>
           <PortfolioSummary totalValue={totalValue} totalNOI={totalNOI} totalLeverage={totalLeverage} />
           </div>
@@ -326,7 +380,7 @@ const DashboardAiCRE: React.FC = () => {
             <DataVisual addresses={addresses} />
           </div>      
 
-          <h3 className="mt-10">Mini Apps</h3>
+          <h3 className="mt-10">Planning Tools</h3>
           {/* Category Filters */}
           <div className="filter-buttons">
             <button
@@ -355,9 +409,6 @@ const DashboardAiCRE: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {/* Active Tool Rendering */}
-        {renderActiveTool()}
       </div>
 
       <style jsx>{`
@@ -391,7 +442,7 @@ const DashboardAiCRE: React.FC = () => {
 
         .toggle-form-button {
           margin-top: 55px;
-          background-color: #64E2E2;
+          background-color: #5FD2D2; 
           color: white;
           max-width: 250px;
           padding: 10px 15px;
@@ -402,7 +453,7 @@ const DashboardAiCRE: React.FC = () => {
         }
 
         .toggle-form-button:hover {
-          background-color: #5FD2D2;
+          background-color: #64E2E2;
         }
 
         .profile-container {
@@ -429,7 +480,7 @@ const DashboardAiCRE: React.FC = () => {
         }
 
         .gear-icon:hover {
-          color: #92EEC1;
+          color: #5FD2D2;
           transform: scale(1.15);
         }
 
@@ -491,7 +542,7 @@ const DashboardAiCRE: React.FC = () => {
 
         .nav-menu li.active,
         .nav-menu li:hover {
-          color: #98fbcb;
+          color: #5FD2D2;
           background-color: #f9f9f9;
           font-weight: bold;
         }
@@ -520,7 +571,7 @@ const DashboardAiCRE: React.FC = () => {
         }
 
         .sub-menu li:hover {
-          color: #98fbcb;
+          color: #5FD2D2;
           background-color: #f3f3f3;
         }
 
@@ -615,7 +666,7 @@ const DashboardAiCRE: React.FC = () => {
 
         .filter-button.active,
         .filter-button:hover {
-          background-color: #92EEC1;
+          background-color: #5FD2D2;
           color: white;
         }
 

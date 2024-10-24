@@ -1,93 +1,72 @@
 import { openaiApiKey } from '@/constants/env';
 import { storeJsonData } from './firebaseClient';
 
-interface Transaction {
-  timestamp: string;
-  type: 'Sent' | 'Received';
-  cryptocurrency: string;
-  usdAmount: number;
-  thirdPartyWallet: string;
-  flagged: boolean;
+interface PropertyInfo {
+  propertyId: string;
+  propertyName: string;
+  value: number;
+  noi: number;
+  leverage: number;
+  dscr: number;
+  ownershipPercentage: number;
+  location: string;
 }
 
-// Generate the OpenAI prompt for relationship analysis and recommendations
-export const generateOpenAIPrompt = (
-  userAddress: string,
-  transactions: Transaction[],
-  status: string // Pass, Fail, or Warning
+// Generate OpenAI prompt for analysis and recommendations specific to CRE
+export const generateOpenAIPromptForCRE = (
+  userId: string,
+  properties: PropertyInfo[]
 ): string => {
-  // Limit transactions to avoid token issues with the API
-  const limitedTransactions = (transactions || []).slice(0, 10);
+  const limitedProperties = properties.slice(0, 5); // Limit to avoid token limit issues
 
-  const transactionDetails = limitedTransactions
+  const propertyDetails = limitedProperties
     .map(
-      (txn, index) =>
-        `Transaction ${index + 1} - ${txn.type}: ${txn.usdAmount} USD involving ${txn.thirdPartyWallet}. Status: ${txn.flagged ? 'Flagged' : 'Safe'}.`
+      (property, index) =>
+        `Property ${index + 1} - ${property.propertyName}: Value: ${property.value} USD, NOI: ${property.noi}, DSCR: ${property.dscr}, Leverage: ${property.leverage * 100}%. Location: ${property.location}.`
     )
     .join('\n');
 
-    const prompt = `
-    As a wealth management professional working with clients in the crypto space, provide a comprehensive analysis for the Ethereum address ${userAddress} covering the following four main areas:
+  const prompt = `
+    You are a commercial real estate consultant working with clients who own multiple properties. Provide a comprehensive analysis for user ID ${userId}, covering the following areas:
     
-    1. **Security Check**: 
-       - Analyze transaction patterns to identify potential malicious activities and relationships with flagged addresses (parents or children).
-       - Based on the status of PASS, FAIL, or WARNING (${status}), provide actionable recommendations for improving security and transaction practices.
-         - If the status is **FAIL**, advise against interacting with the address.
-         - If the status is **WARNING**, caution about indirect involvement with flagged addresses and suggest preventive actions.
-    
-    2. **Financial Roadmap**: 
-       - Assess the transaction history to provide insights into the client's financial journey with cryptoassets.
-       - Identify trends, significant events, and suggest strategies for achieving long-term financial goals in the crypto space.
-    
-    3. **Financial Health**: 
-       - Evaluate the overall financial health of the client's crypto holdings based on their transaction history.
-       - Offer advice on diversification, risk management, and optimizing their crypto portfolio in line with best practices in wealth management.
-    
-    4. **Visualize Wallet**: 
-       - Provide a conceptual visualization of the client's wallet, highlighting asset allocation, transaction types, and relationships with other addresses.
-       - Use this visualization to enhance understanding and support strategic financial planning.
-    
-    **Transaction Details**:
-    ${transactionDetails}
-      `;
-    
-      console.log('Generated OpenAI Prompt:', prompt);
-    
-      return prompt;
+    1. **Portfolio Performance**:
+       - Analyze the user's portfolio, covering ${properties.length} properties:
+       ${propertyDetails}
+
+    2. **Financial Health**:
+       - Evaluate the overall financial health of the portfolio based on NOI, leverage, DSCR, and ownership percentages.
+       - Suggest ways to optimize the portfolio for better cash flow and long-term growth.
+
+    3. **Growth Opportunities**:
+       - Highlight potential opportunities to refinance, invest, or restructure the portfolio to maximize returns.
+
+    **Property Details**:
+    ${propertyDetails}
+  `;
+
+  return prompt;
 };
 
-// Function to generate insights using OpenAI
-export const generateInsights = async (
-  userAddress: string,
-  transactions: Transaction[],
-  status: string // Pass, Fail, or Warning
+// Function to generate insights using OpenAI for CRE properties
+export const generateCREInsights = async (
+  userId: string,
+  properties: PropertyInfo[]
 ): Promise<string | null> => {
   try {
-    const openAIPrompt = generateOpenAIPrompt(userAddress, transactions || [], status);
+    const openAIPrompt = generateOpenAIPromptForCRE(userId, properties);
 
     const payload = {
-      model: 'gpt-4o-mini',
+      model: 'gpt-4',
       messages: [
         {
           role: 'system',
           content: `
-          You are a seasoned wealth management professional specializing in cryptoassets. Your role is to provide comprehensive analyses and recommendations to clients based on their cryptocurrency transactions and holdings.
-
-          When analyzing the Ethereum address ${userAddress}, focus on the following four areas:
-
-          1. **Security Check**
-          2. **Financial Roadmap**
-          3. **Financial Health**
-          4. **Visualize Wallet**
-
-          Use the transaction details and the security status (${status}) provided to generate insightful, actionable advice. Ensure that your response is professional, clear, and tailored to the client's needs.
+          You are a CRE consultant providing analysis and recommendations on property portfolios. Your focus is on financial health and potential growth opportunities.
           `,
         },
         { role: 'user', content: openAIPrompt },
       ],
     };
-
-    console.log('Request payload:', payload);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -99,7 +78,6 @@ export const generateInsights = async (
     });
 
     const responseData = await response.json();
-    console.log('Response data:', responseData);
 
     if (responseData.choices && responseData.choices.length > 0) {
       const insightsText = responseData.choices[0]?.message?.content;
@@ -109,7 +87,7 @@ export const generateInsights = async (
         await storeJsonData({
           insights: insightsText,
           timestamp: Date.now(),
-          userAddress,
+          userId,
         });
 
         return insightsText;
@@ -127,16 +105,32 @@ export const generateInsights = async (
   }
 };
 
-// Fetch data and metrics for a given Ethereum address
-export const fetchDataAndMetrics = async (address: string) => {
+// Fetch data and metrics for a given propertyId (CRE specific)
+export const fetchCREDataAndMetrics = async (propertyId: string) => {
   try {
     const response = await fetch(
-      `https://api.idef.ai/api/get_data_and_metrics?address=${address}`
+      `/api/cre/get_data_and_metrics?propertyId=${propertyId}`
     );
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching data and metrics:', error);
+    console.error('Error fetching CRE data and metrics:', error);
     return null;
+  }
+};
+
+// Store insights in Firebase or a backend service
+export const storeInsights = async (userId: string, insights: string) => {
+  try {
+    const data = {
+      userId,
+      insights,
+      timestamp: Date.now(),
+    };
+
+    await storeJsonData(data);
+    console.log('Insights successfully stored.');
+  } catch (error) {
+    console.error('Error storing insights:', error);
   }
 };

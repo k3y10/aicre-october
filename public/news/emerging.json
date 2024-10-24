@@ -1,10 +1,22 @@
 {
     "articles": [
       {
-        "title": "September 2024 Housing Starts",
+        "title": "The Hottest U.S. Housing Markets | U.S. News Housing Market IndexStarts",
+        "text": "Our analysis of the hottest housing markets pulls from the US News Housing Market Index, which incorporates a wide array of data points.",
+        "image": "https://www.usnews.com/object/image/00000167-98d7-d442-a5ef-b8f70180000e/181210-austintexasskyline-stock.jpg?update-time=1544457566269&size=responsive970",
+        "url": "https://realestate.usnews.com/real-estate/housing-market-index/articles/the-hottest-housing-markets-in-the-us"
+      },
+      {
+        "title": "6 Emerging Rural Housing Markets for 2025",
+        "text": "Are you interested in more trees and fewer people? The U.S. Department of Agriculture found that migration to rural areas was up 0.47% between 2021 and 2022...",
+        "image": "https://img-s-msn-com.akamaized.net/tenant/amp/entityid/AA18FoHp.img?w=534&h=300&m=6",
+        "url": "https://www.msn.com/en-us/money/realestate/6-emerging-rural-housing-markets-for-2025/ar-AA1oEUeR?ocid=finance-verthp-feeds&apiversion=v2&noservercache=1&domshim=1&renderwebcomponents=1&wcseo=1&batchservertelemetry=1&noservertelemetry=1"
+      },
+      {
+        "title": "The No. 1 emerging real-estate market is this coastal California city",
         "text": "Housing Starts As Expected in September, Supported By Single-Family Construction",
-        "image": "https://www.zillowstatic.com/bedrock/app/uploads/sites/37/shutterstock_205407847-1-656b54.jpg",
-        "url": "https://www.zillow.com/home-values/55/ut/"
+        "image": "https://images.mktw.net/im-76095273?width=940&size=1.5005861664712778",
+        "url": "https://www.marketwatch.com/story/americas-no-1-emerging-real-estate-market-is-a-costly-coastal-california-city-report-says-37f61f57"
       }
     ]
   }

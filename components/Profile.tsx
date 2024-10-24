@@ -67,7 +67,7 @@ const Profile: React.FC<ProfileProps> = ({ onClose }) => {
         }
 
         .profile-settings li:hover {
-          color: #98fbcb;
+          color: #5FD2D2;
         }
 
         /* Mobile-friendly styling */

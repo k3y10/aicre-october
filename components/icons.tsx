@@ -41,7 +41,11 @@ import {
   faUserGear, 
   faSignOutAlt,
   faArrowUp,
-  faArrowDown
+  faArrowDown, 
+  faTools,
+  faHouse,
+  faMountain,
+  faShop
 } from '@fortawesome/free-solid-svg-icons';
 
 interface IconProps extends Omit<FontAwesomeIconProps, 'icon'> {}
@@ -202,3 +206,16 @@ export const ArrowUpIcon: React.FC<IconProps> = (props) =>
 
 export const ArrowDownIcon: React.FC<IconProps> = (props) => 
 <FontAwesomeIcon icon={faArrowDown} {...props} />;
+
+export const Tools: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faTools} {...props} />;
+
+export const House: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faHouse} {...props} />;
+
+export const Shop: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faShop} {...props} />;
+
+export const Mountain: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faMountain} {...props} />;
+

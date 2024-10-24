@@ -53,42 +53,81 @@ const DataUpload: React.FC<{ onDataSync?: (data: any) => void }> = ({ onDataSync
   };
 
   return (
-    <div style={{ backgroundColor: '#f8f9fa', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '20px', marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 }}>
-      <h2 style={{ fontSize: '16px', color: '#333', fontWeight: 600, marginBottom: '10px' }}>
-        Upload SCRE Document for AI Processing
-      </h2>
+    <div className="data-upload-container">
+      <h2>Upload SCRE Document for AI Processing</h2>
 
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <input
-          type="file"
-          onChange={handleFileChange}
-          accept=".csv,.json,.txt"
-          style={{ width: '100%', padding: '10px', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px' }}
-        />
-      </div>
+      <input
+        type="file"
+        onChange={handleFileChange}
+        accept=".csv,.json,.txt"
+        className="file-input"
+      />
 
-      <button
-        onClick={handleFileUpload}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#007bff', color: 'white', padding: '10px 16px', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', transition: 'background-color 0.3s ease' }}
-        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#0056b3')}
-        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#007bff')}
-      >
+      <button className="upload-button" onClick={handleFileUpload}>
         <FontAwesomeIcon icon={faUpload} style={{ marginRight: '8px' }} />
         Upload File
       </button>
 
-      {uploadStatus && <p style={{ color: '#666', fontSize: '14px' }}>{uploadStatus}</p>}
+      {uploadStatus && <p className="upload-status">{uploadStatus}</p>}
 
       {uploadResults && (
-        <div style={{ marginTop: '20px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>
-            Processing Results
-          </h3>
-          <pre style={{ backgroundColor: '#f9f9f9', padding: '10px', borderRadius: '6px', fontSize: '14px', overflowX: 'auto' }}>
-            {uploadResults}
-          </pre>
+        <div className="upload-results">
+          <h3>Processing Results</h3>
+          <pre>{uploadResults}</pre>
         </div>
       )}
+
+      <style jsx>{`
+        .data-upload-container {
+          padding: 20px;
+          background-color: #f8f9fa;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          margin-top: 15px;
+        }
+
+        .file-input {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+        }
+
+        .upload-button {
+          margin-top: 15px;
+          padding: 10px 16px;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+        }
+
+        .upload-button:hover {
+          background-color: #0056b3;
+        }
+
+        .upload-status {
+          margin-top: 10px;
+          font-size: 14px;
+          color: #666;
+        }
+
+        .upload-results {
+          margin-top: 20px;
+          background-color: #fff;
+          padding: 15px;
+          border-radius: 8px;
+          box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        pre {
+          background-color: #f9f9f9;
+          padding: 10px;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+      `}</style>
     </div>
   );
 };

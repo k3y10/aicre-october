@@ -144,10 +144,6 @@ const DataVisual: React.FC<DataVisualProps> = ({ addresses }) => {
         <Pie data={pieChartData} options={pieChartOptions} />
       </div>
 
-      <div className="chart-container">
-        <Line data={lineChartData} options={lineChartOptions} />
-      </div>
-
       <style jsx>{`
         .data-visual {
           display: grid;

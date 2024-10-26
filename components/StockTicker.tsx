@@ -17,6 +17,11 @@ const StockTicker: React.FC = () => {
       { symbol: 'AMZN', price: '3400.12', change: '+2.67%' },
       { symbol: 'TSLA', price: '880.32', change: '-1.45%' },
       { symbol: 'MSFT', price: '299.22', change: '+0.98%' },
+      { symbol: 'AAPL', price: '150.23', change: '+1.23%' },
+      { symbol: 'GOOGL', price: '2750.65', change: '-0.56%' },
+      { symbol: 'AMZN', price: '3400.12', change: '+2.67%' },
+      { symbol: 'TSLA', price: '880.32', change: '-1.45%' },
+      { symbol: 'MSFT', price: '299.22', change: '+0.98%' },
     ];
     setStockData(stockItems);
   };
@@ -53,7 +58,7 @@ const StockTicker: React.FC = () => {
 
         .ticker-content {
           display: flex;
-          animation: tickerMove 20s linear infinite;
+          animation: tickerMove 30s linear infinite;
         }
 
         @keyframes tickerMove {

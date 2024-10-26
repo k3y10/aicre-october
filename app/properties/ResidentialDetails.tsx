@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import AddressTable from '@/components/AddressTable'; // Import the PropertyForm component
+import AddressTable from '@/components/AddressTable';
 import PropertyForm from '@/components/PropertyForm';
 
 interface Property {
@@ -13,35 +13,34 @@ interface Property {
   yieldRate: number;
   dscr: number;
   opportunity: string;
-  image: string | null; // Allow image to be string or null
+  image: string | null;
 }
 
-interface PropertyDetailsProps {
-  selectedPropertyId: string; // ID passed in from the dashboard or sidebar
-  propertyType: 'all' | 'commercial' | 'residential' | 'recreational' | 'retail'; // Property type to dynamically load data
+interface ResidentialDetailsProps {
+  selectedPropertyId: string;
 }
 
-const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, propertyType }) => {
+const ResidentialDetails: React.FC<ResidentialDetailsProps> = ({ selectedPropertyId }) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [addresses, setAddresses] = useState<Property[]>([]);
 
-  // Fetch the property data from the correct JSON file based on the property type
+  // Fetch property data from the correct JSON file for residential properties
   useEffect(() => {
     const fetchPropertyData = async () => {
       try {
-        const response = await fetch(`/property_types/${propertyType}.json`); // Dynamically load the JSON file for the given property type
+        const response = await fetch('/property_types/residential.json'); // Correct JSON path for residential
         const data = await response.json();
         setProperties(data);
         const property = data.find((p: Property) => p.id === selectedPropertyId);
-        setSelectedProperty(property || data[0]); // Default to the first property if not found
+        setSelectedProperty(property || data[0]);
       } catch (error) {
         console.error('Error loading properties:', error);
       }
     };
 
     fetchPropertyData();
-  }, [selectedPropertyId, propertyType]);
+  }, [selectedPropertyId]);
 
   const handleAddNewAddress = (newAddress: Property) => {
     setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
@@ -57,7 +56,7 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, p
     <div className="property-details">
       {/* Property selector */}
       <div className="property-selector">
-        <label>{propertyType.charAt(0).toUpperCase() + propertyType.slice(1)} Properties: </label>
+        <label>Residential Properties: </label>
         <select
           value={selectedProperty.id}
           onChange={(e) => {
@@ -78,7 +77,7 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, p
         {selectedProperty.image ? (
           <img src={selectedProperty.image} alt={selectedProperty.propertyName} className="property-image" />
         ) : (
-          <div className="no-image">No Image Available</div> // Fallback if image is null
+          <div className="no-image">No Image Available</div>
         )}
         <div className="property-info">
           <h2>{selectedProperty.propertyName}</h2>
@@ -87,18 +86,18 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, p
         </div>
       </div>
 
-      {/* Address Table to display saved properties */}
+      {/* Address Table */}
       <div className="table-section">
         <AddressTable addresses={addresses} onRemove={handleRemoveAddress} />
       </div>
 
-      {/* Property Form to add new properties */}
+      {/* Property Form */}
       <div className="form-section">
         <h3>Add New Property</h3>
         <PropertyForm onAddNewAddress={handleAddNewAddress} />
       </div>
 
-      {/* Styling for the component */}
+      {/* Styles */}
       <style jsx>{`
         .property-details {
           background-color: #fff;
@@ -145,52 +144,27 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, p
           color: #555;
         }
 
-        .property-stats {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-        }
-
-        .stat {
-          background-color: #f8f9fa;
-          padding: 20px;
-          border-radius: 8px;
-          text-align: center;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .stat p {
-          font-size: 14px;
-          color: #666;
-          margin-bottom: 10px;
-        }
-
-        .stat h3 {
-          font-size: 24px;
-          margin: 0;
-        }
-
         .property-selector {
           margin-top: 5px;
           margin-bottom: 25px;
+        }
+
+        .table-section {
+          width: 100%;
+          overflow-x: auto;
+          max-height: 400px;
+          display: flex;
+          justify-content: center;
         }
 
         .form-section {
           margin-top: 20px;
         }
 
-        .table-section {
-          width: 100%;
-          overflow-x: auto; /* Enable horizontal scrolling */
-          overflow-y: auto; /* Enable vertical scrolling */
-          max-height: 400px; /* Set a max height for vertical scrolling */
-          display: flex;
-          justify-content: center;
-        }
-
         @media (max-width: 768px) {
-          .property-stats {
-            grid-template-columns: 1fr;
+          .property-header {
+            flex-direction: column;
+            align-items: flex-start;
           }
         }
       `}</style>
@@ -198,4 +172,4 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, p
   );
 };
 
-export default PropertyDetails;
+export default ResidentialDetails;

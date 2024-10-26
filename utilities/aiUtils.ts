@@ -14,7 +14,6 @@ interface PropertyInfo {
 
 // Generate OpenAI prompt for analysis and recommendations specific to CRE
 export const generateOpenAIPromptForCRE = (
-  userId: string,
   properties: PropertyInfo[]
 ): string => {
   const limitedProperties = properties.slice(0, 5); // Limit to avoid token limit issues
@@ -27,7 +26,7 @@ export const generateOpenAIPromptForCRE = (
     .join('\n');
 
   const prompt = `
-    You are a commercial real estate consultant working with clients who own multiple properties. Provide a comprehensive analysis for user ID ${userId}, covering the following areas:
+    You are a commercial real estate consultant working with clients who own multiple properties. Provide a comprehensive analysis covering the following areas:
     
     1. **Portfolio Performance**:
        - Analyze the user's portfolio, covering ${properties.length} properties:
@@ -49,11 +48,10 @@ export const generateOpenAIPromptForCRE = (
 
 // Function to generate insights using OpenAI for CRE properties
 export const generateCREInsights = async (
-  userId: string,
   properties: PropertyInfo[]
 ): Promise<string | null> => {
   try {
-    const openAIPrompt = generateOpenAIPromptForCRE(userId, properties);
+    const openAIPrompt = generateOpenAIPromptForCRE(properties);
 
     const payload = {
       model: 'gpt-4',
@@ -83,13 +81,6 @@ export const generateCREInsights = async (
       const insightsText = responseData.choices[0]?.message?.content;
 
       if (insightsText) {
-        // Store the generated insights in Firebase or any storage backend
-        await storeJsonData({
-          insights: insightsText,
-          timestamp: Date.now(),
-          userId,
-        });
-
         return insightsText;
       } else {
         console.error('Insights text is undefined or null.');
@@ -120,10 +111,9 @@ export const fetchCREDataAndMetrics = async (propertyId: string) => {
 };
 
 // Store insights in Firebase or a backend service
-export const storeInsights = async (userId: string, insights: string) => {
+export const storeInsights = async (insights: string) => {
   try {
     const data = {
-      userId,
       insights,
       timestamp: Date.now(),
     };

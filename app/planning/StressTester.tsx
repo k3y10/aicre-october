@@ -1,33 +1,42 @@
 import React, { useState, useEffect } from 'react';
 
-interface StressTesterProps {
-  propertyId: string; // Pass property ID to dynamically fetch property data
-}
-
 interface PropertyData {
+  propertyName: string;
   noi: number;
   value: number;
   leverage: number;
 }
 
-const StressTester: React.FC<StressTesterProps> = ({ propertyId }) => {
+const StressTester: React.FC = () => {
+  const [propertyType, setPropertyType] = useState<string>('commercial');
+  const [properties, setProperties] = useState<PropertyData[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyData | null>(null);
   const [interestRate, setInterestRate] = useState<number>(3); // Default rate
   const [noiImpact, setNoiImpact] = useState<number>(0);
   const [valueImpact, setValueImpact] = useState<number>(0);
-  const [propertyData, setPropertyData] = useState<PropertyData | null>(null);
 
-  // Fetch property data dynamically based on propertyId
+  // Fetch properties based on selected property type
   useEffect(() => {
-    fetch(`/property/${propertyId}/data.json`)
-      .then((response) => response.json())
-      .then((data) => setPropertyData(data))
-      .catch((error) => console.error('Error fetching property data:', error));
-  }, [propertyId]);
+    const fetchProperties = async () => {
+      try {
+        const response = await fetch(`/property_types/${propertyType}.json`);
+        const data: PropertyData[] = await response.json();
+        setProperties(data);
+        if (data.length > 0) {
+          setSelectedProperty(data[0]); // Default to the first property
+        }
+      } catch (error) {
+        console.error('Error loading properties:', error);
+      }
+    };
+
+    fetchProperties();
+  }, [propertyType]);
 
   const handleTest = () => {
-    if (!propertyData) return;
+    if (!selectedProperty) return;
 
-    const { noi, value } = propertyData;
+    const { noi, value } = selectedProperty;
 
     // Simulate impact based on interest rate changes
     const noiChange = noi * (interestRate / 100);
@@ -37,13 +46,50 @@ const StressTester: React.FC<StressTesterProps> = ({ propertyId }) => {
     setValueImpact(valueChange);
   };
 
-  if (!propertyData) {
-    return <div>Loading property data...</div>;
-  }
-
   return (
     <div className="stress-tester">
       <h2>Financial Stress Tester</h2>
+
+      {/* Property Type Selector */}
+      <div className="form-group">
+        <label htmlFor="propertyType">Select Property Type:</label>
+        <select
+          id="propertyType"
+          value={propertyType}
+          onChange={(e) => setPropertyType(e.target.value)}
+          className="input-field"
+        >
+          <option value="commercial">Commercial</option>
+          <option value="residential">Residential</option>
+          <option value="recreational">Recreational</option>
+          <option value="retail">Retail</option>
+        </select>
+      </div>
+
+      {/* Property Selector */}
+      {properties.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="propertySelect">Select Property:</label>
+          <select
+            id="propertySelect"
+            value={selectedProperty?.propertyName || ''}
+            onChange={(e) =>
+              setSelectedProperty(
+                properties.find((property) => property.propertyName === e.target.value) || null
+              )
+            }
+            className="input-field"
+          >
+            {properties.map((property) => (
+              <option key={property.propertyName} value={property.propertyName}>
+                {property.propertyName}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Interest Rate Input */}
       <div className="form-group">
         <label>Interest Rate Change (%)</label>
         <input
@@ -59,15 +105,18 @@ const StressTester: React.FC<StressTesterProps> = ({ propertyId }) => {
         Run Test
       </button>
 
-      <div className="results">
-        <h3>Results</h3>
-        <p>
-          <strong>NOI Impact:</strong> ${noiImpact.toLocaleString()}
-        </p>
-        <p>
-          <strong>Property Value Impact:</strong> ${valueImpact.toLocaleString()}
-        </p>
-      </div>
+      {/* Results */}
+      {selectedProperty && (
+        <div className="results">
+          <h3>Results for {selectedProperty.propertyName}</h3>
+          <p>
+            <strong>NOI Impact:</strong> ${noiImpact.toLocaleString()}
+          </p>
+          <p>
+            <strong>Property Value Impact:</strong> ${valueImpact.toLocaleString()}
+          </p>
+        </div>
+      )}
 
       <style jsx>{`
         .stress-tester {

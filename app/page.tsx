@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BuildingIcon,
   ChecklistIcon,
@@ -20,9 +20,14 @@ import {
   Info,
   House,
   Shop,
-  Mountain
+  Mountain,
+  Map
 } from '@/components/icons';
 import PropertyDetails from './properties/PropertyDetails';
+import CommercialDetails from './properties/CommercialDetails';
+import RecreationalDetails from './properties/RecreationalDetails';
+import ResidentialDetails from './properties/ResidentialDetails';
+import RetailDetails from './properties/RetailDetails';
 import DataRoom from './data/data-room';
 import NewsTable from '@/components/NewsTable';
 import DataUpload from '@/components/DataUpload';
@@ -33,10 +38,13 @@ import AddressTable from '@/components/AddressTable';
 import PropertyForm from '@/components/PropertyForm';
 import DataVisual from '@/components/DataVisual';
 import CapTable from './planning/CapTable';
-import Forecaster from './tools/Forecaster';
+import Forecaster from './planning/Forecaster';
 import SREOTable from './planning/SREOTable';
 import StressTester from './planning/StressTester';
 import StockTicker from '@/components/StockTicker';
+import Scenario from './planning/Scenario';
+import HeatMap from './mapping/HeatMap'; 
+import ScenarioMap from './mapping/ScenarioMap';
 
 type Address = {
   propertyName: string;
@@ -52,12 +60,22 @@ type Address = {
 
 // Tools for the dashboard with updated icons
 const tools = [
-  { id: 1, name: 'PropertyDetails', label: 'Property Details', icon: BarChartIcon, active: false },
+  { id: 1, name: 'PropertyDetails', label: 'Property Details', icon: BarChartIcon, active: true },
+  { id: 2, name: 'CommercialDetails', label: 'Commercial Details', icon: BarChartIcon, active: true },
+  { id: 3, name: 'RecreationalDetails', label: 'Recreational Details', icon: BarChartIcon, active: true },
+  { id: 4, name: 'ResidentialDetails', label: 'Residential Details', icon: BarChartIcon, active: true },
+  { id: 5, name: 'RetailDetails', label: 'Retail Details', icon: BarChartIcon, active: true },
+  { id: 6, name: 'Forecaster', label: 'Forecaster', icon: BarChartIcon, active: true },
+  { id: 7, name: 'CapTable', label: 'Cap Table', icon: BarChartIcon, active: true },
+  { id: 8, name: 'SREOTable', label: 'SREO Table', icon: BarChartIcon, active: true },
+  { id: 9, name: 'StressTester', label: 'Stress Tester', icon: BarChartIcon, active: true },
+  { id: 10, name: 'Scenario', label: 'Scenario', icon: BarChartIcon, active: true },
+  { id: 11, name: 'DataRoom', label: 'Data Room', icon: FileUpload, active: true },
+  { id: 11, name: 'HeatMap', label: 'Heat Map', icon: FileUpload, active: true },
+  { id: 11, name: 'ScenarioMap', label: 'Scenario Map', icon: FileUpload, active: true },
+
 ]; 
 
-const sideMenuTools = [
-  { id: 7, name: 'UpgradePlanModal', label: 'Data Room', icon: FileUpload, active: true },
-];
 
 // Categories for filtering tools
 const categories = {
@@ -73,11 +91,14 @@ const DashboardAiCRE: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSubMenuOpen1, setIsSubMenuOpen1] = useState<boolean>(false); // Separate state for first submenu
-  const [isSubMenuOpen2, setIsSubMenuOpen2] = useState<boolean>(false); // Separate state for second submenu
+  const [isSubMenuOpen2, setIsSubMenuOpen2] = useState<boolean>(false);
+  const [isSubMenuOpen3, setIsSubMenuOpen3] = useState<boolean>(false); // Separate state for second submenu
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false); 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(false); // State for toggling form visibility
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('property1'); // default property ID
+  const [userId, setUserId] = useState<string | null>(null);
+
 
   const [addresses, setAddresses] = useState([
     {
@@ -132,6 +153,10 @@ const DashboardAiCRE: React.FC = () => {
   const toggleSubMenu2 = () => {
       setIsSubMenuOpen2(!isSubMenuOpen2);
   };
+
+  const toggleSubMenu3 = () => {
+    setIsSubMenuOpen3(!isSubMenuOpen3);
+};
   
   const toggleSettings = () => {
     setIsSettingsOpen(!isSettingsOpen); // Toggle the profile settings
@@ -166,14 +191,20 @@ const DashboardAiCRE: React.FC = () => {
    const calculateSummary = () => {
     const totalValue = addresses.reduce((sum, property) => sum + property.value, 0);
     const totalNOI = addresses.reduce((sum, property) => sum + property.noi, 0);
-    const totalLeverage = addresses.length > 0
+    const avgLeverage = addresses.length > 0
       ? addresses.reduce((sum, property) => sum + property.leverage, 0) / addresses.length
       : 0;
+    const avgYieldRate = addresses.length > 0
+      ? addresses.reduce((sum, property) => sum + property.yieldRate, 0) / addresses.length
+      : 0;
+    const avgDSCR = addresses.length > 0
+      ? addresses.reduce((sum, property) => sum + property.dscr, 0) / addresses.length
+      : 0;
 
-    return { totalValue, totalNOI, totalLeverage };
+    return { totalValue, totalNOI, avgLeverage, avgYieldRate, avgDSCR };
   };
 
-  const { totalValue, totalNOI, totalLeverage } = calculateSummary();
+  const { totalValue, totalNOI, avgLeverage, avgYieldRate, avgDSCR } = calculateSummary();
   const property1 = {
     propertyName: 'Money Maker',
     type: 'Residential',
@@ -217,8 +248,33 @@ const DashboardAiCRE: React.FC = () => {
     if (tool) {
       switch (tool.name) {
         case 'PropertyDetails':
-          return   <PropertyDetails selectedPropertyId={selectedPropertyId} />
-          ; // Pass the selected property
+          return  <PropertyDetails selectedPropertyId="property1" propertyType="commercial"  />
+        case 'PropertyDetails':
+         return  <PropertyDetails selectedPropertyId="property1" propertyType="recreational"  />
+        case 'PropertyDetails':
+          return  <PropertyDetails selectedPropertyId="property1" propertyType="residential"  />
+        case 'PropertyDetails':
+          return  <PropertyDetails selectedPropertyId="property1" propertyType="retail"  />
+        case 'CommercialDetails':
+          return   <CommercialDetails selectedPropertyId={selectedPropertyId} />;
+        case 'RecreationalDetails':
+          return   <RecreationalDetails selectedPropertyId={selectedPropertyId} />;
+        case 'ResidentialDetails':
+          return   <ResidentialDetails selectedPropertyId={selectedPropertyId} />;
+        case 'RetailDetails':
+          return   <RetailDetails selectedPropertyId={selectedPropertyId} />;
+        case 'CapTable':
+          return <CapTable />;
+        case 'Forecaster':
+          return <Forecaster />
+        case 'SREOTable':
+          return <SREOTable />
+        case 'StressTester':
+          return <StressTester />; 
+        case 'Scenario':
+          return <Scenario />;
+        case 'HeatMap':
+          return <HeatMap />;
         case 'DataRoom':
           return <DataRoom />;
         case 'NewsTable':
@@ -229,7 +285,6 @@ const DashboardAiCRE: React.FC = () => {
           return renderToolGrid();
       }
     }
-    return renderToolGrid();
   };
 
   const renderToolGrid = () => (
@@ -253,6 +308,21 @@ const DashboardAiCRE: React.FC = () => {
       })}
     </div>
   );
+
+  useEffect(() => {
+    // Simulate fetching user ID from an API or auth context
+    const fetchUserId = async () => {
+      // Assume this comes from your API or auth service
+      const fetchedUserId = '12345'; 
+      setUserId(fetchedUserId);
+    };
+
+    fetchUserId();
+  }, []);
+
+  if (!userId) {
+    return <div>Loading user information...</div>;
+  }
 
   return (
     <div className="dashboard-container">
@@ -285,18 +355,19 @@ const DashboardAiCRE: React.FC = () => {
           </ul>
           {isSubMenuOpen1  && (
             <ul className="sub-menu">
+              <li onClick={() => handleToolClick('RetailDetails')}>
+                <Shop /> Retail
+              </li>
               <li onClick={() => handleToolClick('PropertyDetails')}>
                 <BuildingIcon /> Commercial
               </li>
-              <li onClick={() => handleToolClick('PlanningTools')}>
-                <House /> Resedentail
+              <li onClick={() => handleToolClick('ResidentialDetails')}>
+                <House /> Residentail
               </li>
-              <li onClick={() => handleToolClick('DataRoom')}>
+              <li onClick={() => handleToolClick('RecreationalDetails')}>
                 <Mountain /> Recreational
               </li>
-              <li onClick={() => handleToolClick('DataRoom')}>
-                <Shop /> Retail
-              </li>
+              
             </ul>
           )}
           <ul className="sub-menu-toggle" onClick={toggleSubMenu2}>
@@ -306,27 +377,36 @@ const DashboardAiCRE: React.FC = () => {
           </ul>
           {isSubMenuOpen2 && (
             <ul className="sub-menu">
-              <li onClick={() => handleToolClick('PropertyDetails')}>
+              <li onClick={() => handleToolClick('Forecaster')}>
                 <BuildingIcon /> Forecaster
               </li>
-              <li onClick={() => handleToolClick('PlanningTools')}>
+              <li onClick={() => handleToolClick('StressTester')}>
                 <ChecklistIcon /> Stress Tester
               </li>
-              <li onClick={() => handleToolClick('DataRoom')}>
+              <li onClick={() => handleToolClick('CapTable')}>
                 <FileUpload /> Cap Table
               </li>
-              <li onClick={() => handleToolClick('DataRoom')}>
+              <li onClick={() => handleToolClick('SREOTable')}>
                 <FileUpload /> SREO Data
               </li>
             </ul>
           )}
-          <ul>
-            {sideMenuTools.map((item) => (
-              <li key={item.id} onClick={() => handleToolClick(item.name)}>
-                <item.icon />
-                {item.label}
+          <ul className="sub-menu-toggle" onClick={toggleSubMenu3}>
+            <li>
+             <Map/> Mapping Tools {isSubMenuOpen3 ? <ChevronUpIcon /> : <ChevronDownIcon />}
+            </li>
+          </ul>
+          {isSubMenuOpen3 && (
+            <ul className="sub-menu">
+              <li onClick={() => handleToolClick('ScenarioMap')}>
+                <BuildingIcon /> Scenario Maps
               </li>
-            ))}
+              <li onClick={() => handleToolClick('HeatMap')}>
+                <ChecklistIcon /> Heat Maps
+              </li>
+            </ul>
+          )}
+          <ul>
           </ul>
           <ul>
             <li className="logout-button">
@@ -341,8 +421,16 @@ const DashboardAiCRE: React.FC = () => {
           <div className="portfolio-summary mt-4">
           <StockTicker/>
           {renderActiveTool()}
-          <h3>Portfolio Summary</h3>
-          <PortfolioSummary totalValue={totalValue} totalNOI={totalNOI} totalLeverage={totalLeverage} />
+          <PortfolioSummary
+            totalValue={totalValue}
+            totalNOI={totalNOI}
+            totalLeverage={avgLeverage}
+            totalYieldRate={avgYieldRate}
+            totalDSCR={avgDSCR}
+            leverageTrend={avgLeverage >= 0.65 ? 'up' : 'down'}
+            yieldRateTrend={avgYieldRate >= 0.07 ? 'up' : 'down'}
+            dscrTrend={avgDSCR >= 1.4 ? 'up' : 'down'}
+          />
           </div>
           <div className="news-section">
             <h3>Market News</h3>
@@ -379,35 +467,6 @@ const DashboardAiCRE: React.FC = () => {
           <div className="data-visual-container">
             <DataVisual addresses={addresses} />
           </div>      
-
-          <h3 className="mt-10">Planning Tools</h3>
-          {/* Category Filters */}
-          <div className="filter-buttons">
-            <button
-              className={`filter-button ${activeCategory === 'ALL' ? 'active' : ''}`}
-              onClick={() => handleCategoryClick('ALL')}
-            >
-              All
-            </button>
-            <button
-              className={`filter-button ${activeCategory === 'RESIDENTIAL' ? 'active' : ''}`}
-              onClick={() => handleCategoryClick('RESIDENTIAL')}
-            >
-              Residential
-            </button>
-            <button
-              className={`filter-button ${activeCategory === 'COMMERCIAL' ? 'active' : ''}`}
-              onClick={() => handleCategoryClick('COMMERCIAL')}
-            >
-              Commercial
-            </button>
-            <button
-              className={`filter-button ${activeCategory === 'FINANCE' ? 'active' : ''}`}
-              onClick={() => handleCategoryClick('FINANCE')}
-            >
-              Finance
-            </button>
-          </div>
         </div>
       </div>
 

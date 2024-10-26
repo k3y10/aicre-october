@@ -45,7 +45,8 @@ import {
   faTools,
   faHouse,
   faMountain,
-  faShop
+  faShop,
+  faMapLocationDot
 } from '@fortawesome/free-solid-svg-icons';
 
 interface IconProps extends Omit<FontAwesomeIconProps, 'icon'> {}
@@ -218,4 +219,7 @@ export const Shop: React.FC<IconProps> = (props) =>
 
 export const Mountain: React.FC<IconProps> = (props) => 
 <FontAwesomeIcon icon={faMountain} {...props} />;
+
+export const Map: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faMapLocationDot} {...props} />;
 

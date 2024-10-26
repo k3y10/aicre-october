@@ -1,0 +1,42 @@
+[
+    {
+      "id": "property1",
+      "propertyName": "Ritchie Group LLC",
+      "type": "Commercial",
+      "address": "1245 Brickyard Rd # 70, Salt Lake City, UT 84106",
+      "noi": 50000,
+      "value": 250000,
+      "leverage": 0.75,
+      "yieldRate": 0.05,
+      "dscr": 1.25,
+      "opportunity": "High Growth",
+      "image": "/com1.jpg"
+    },
+    {
+      "id": "property2",
+      "propertyName": "KOHL's",
+      "type": "Commercial",
+      "address": "1154 Brickyard Rd, Salt Lake City, UT 84106",
+      "noi": 100000,
+      "value": 500000,
+      "leverage": 0.65,
+      "yieldRate": 0.08,
+      "dscr": 1.50,
+      "opportunity": "Moderate Growth",
+      "image": "/com2.jpg"
+    },
+    {
+      "id": "property3",
+      "propertyName": "Harmons",
+      "type": "Commercial",
+      "address": "3270 S 1300 E, Salt Lake City, UT 84106",
+      "noi": 75000,
+      "value": 400000,
+      "leverage": 0.70,
+      "yieldRate": 0.06,
+      "dscr": 1.35,
+      "opportunity": "Steady Growth",
+      "image": "/com3.jpg"
+    }
+  ]
+  

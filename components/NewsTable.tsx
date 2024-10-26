@@ -16,6 +16,7 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [currentNewsIndex, setCurrentNewsIndex] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
+  const [fadeState, setFadeState] = useState<'fadeIn' | 'fadeOut'>('fadeIn');
 
   const fetchLocalNews = async () => {
     try {
@@ -44,11 +45,15 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
   }, [newsType]);
 
   useEffect(() => {
-    // Automatically cycle through news items every 5 seconds
+    // Automatically cycle through news items with fade effect
     if (newsItems.length > 1) {
       const interval = setInterval(() => {
-        setCurrentNewsIndex((prevIndex) => (prevIndex + 1) % newsItems.length);
-      }, 5000); // Change news item every 5 seconds
+        setFadeState('fadeOut'); // Start fade out
+        setTimeout(() => {
+          setCurrentNewsIndex((prevIndex) => (prevIndex + 1) % newsItems.length); // Switch news
+          setFadeState('fadeIn'); // Start fade in
+        }, 1000); // Duration of the fade out before switching to the next news item
+      }, 6000); // Total duration for each news item (5 seconds visible, 1 second fade)
 
       return () => clearInterval(interval); // Clear interval on component unmount
     }
@@ -58,12 +63,12 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
 
   return (
     <div className="news-card">
-      <h4>{newsType === 'national' ? 'National News' : newsType === 'regional' ? 'Regional News' : 'Emerging Markets'}</h4>
+      <h4>{newsType === 'national' ? 'National News' : newsType === 'regional' ? 'Portfolio News' : 'Emerging Markets'}</h4>
 
       {loading ? (
         <p>Loading news...</p>
       ) : currentNewsItem ? (
-        <div className="news-content">
+        <div className={`news-content ${fadeState}`}>
           {currentNewsItem.image && (
             <img
               src={currentNewsItem.image}
@@ -120,23 +125,16 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
         }
 
         .news-content {
-          opacity: 0;
-          animation: fadeInOut 10s ease-in-out infinite;
+          opacity: 1;
+          transition: opacity 1s ease-in-out;
         }
 
-        @keyframes fadeInOut {
-          0% {
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          90% {
-            opacity: 1;
-          }
-          100% {
-            opacity: 0;
-          }
+        .news-content.fadeOut {
+          opacity: 0;
+        }
+
+        .news-content.fadeIn {
+          opacity: 1;
         }
 
         @media (max-width: 1024px) {

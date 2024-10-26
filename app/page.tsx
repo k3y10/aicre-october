@@ -44,7 +44,6 @@ import StressTester from './planning/StressTester';
 import StockTicker from '@/components/StockTicker';
 import Scenario from './planning/Scenario';
 import HeatMap from './mapping/HeatMap'; 
-import ScenarioMap from './mapping/ScenarioMap';
 
 type Address = {
   propertyName: string;

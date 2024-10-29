@@ -33,7 +33,8 @@ const StockTicker: React.FC = () => {
   return (
     <div className="stock-ticker">
       <div className="ticker-content">
-        {stockData.map((stock, index) => (
+        {/* Duplicate the stock data to ensure seamless looping */}
+        {[...stockData, ...stockData].map((stock, index) => (
           <div className="ticker-item" key={index}>
             <span className="stock-symbol">{stock.symbol}</span>:
             <span className="stock-price">{stock.price}</span>
@@ -47,6 +48,7 @@ const StockTicker: React.FC = () => {
       <style jsx>{`
         .stock-ticker {
           background-color: #333;
+          border-radius: 4px;
           padding: 10px;
           overflow: hidden;
           color: white;
@@ -58,15 +60,16 @@ const StockTicker: React.FC = () => {
 
         .ticker-content {
           display: flex;
-          animation: tickerMove 30s linear infinite;
+          animation: tickerMove 20s linear infinite;
+          min-width: 100%; /* Ensure it starts at full width */
         }
 
         @keyframes tickerMove {
           0% {
-            transform: translateX(100%);
+            transform: translateX(0);
           }
           100% {
-            transform: translateX(-100%);
+            transform: translateX(-50%); /* Only move halfway since we duplicate the items */
           }
         }
 

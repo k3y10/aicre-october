@@ -1,5 +1,4 @@
 import { openaiApiKey } from '@/constants/env';
-import { storeJsonData } from './firebaseClient';
 
 interface PropertyInfo {
   propertyId: string;
@@ -10,6 +9,8 @@ interface PropertyInfo {
   dscr: number;
   ownershipPercentage: number;
   location: string;
+  latitude: number;
+  longitude: number;
 }
 
 // Generate OpenAI prompt for analysis and recommendations specific to CRE
@@ -26,10 +27,10 @@ export const generateOpenAIPromptForCRE = (
     .join('\n');
 
   const prompt = `
-    You are a commercial real estate consultant working with clients who own multiple properties. Provide a comprehensive analysis covering the following areas:
+    You are a commercial real estate consultant analyzing a portfolio of ${properties.length} properties. Provide a comprehensive analysis covering the following areas:
     
     1. **Portfolio Performance**:
-       - Analyze the user's portfolio, covering ${properties.length} properties:
+       - Analyze the user's portfolio:
        ${propertyDetails}
 
     2. **Financial Health**:
@@ -80,12 +81,7 @@ export const generateCREInsights = async (
     if (responseData.choices && responseData.choices.length > 0) {
       const insightsText = responseData.choices[0]?.message?.content;
 
-      if (insightsText) {
-        return insightsText;
-      } else {
-        console.error('Insights text is undefined or null.');
-        return null;
-      }
+      return insightsText || null;
     } else {
       console.error('No insights available.');
       return null;
@@ -96,31 +92,31 @@ export const generateCREInsights = async (
   }
 };
 
-// Fetch data and metrics for a given propertyId (CRE specific)
-export const fetchCREDataAndMetrics = async (propertyId: string) => {
+// Fetch data from JSON for the Mapbox properties
+export const fetchPropertiesFromJson = async (
+  propertyType: string
+): Promise<PropertyInfo[]> => {
   try {
-    const response = await fetch(
-      `/api/cre/get_data_and_metrics?propertyId=${propertyId}`
-    );
+    const response = await fetch(`/property_types/${propertyType}.json`);
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching CRE data and metrics:', error);
-    return null;
+    console.error('Error fetching property data:', error);
+    return [];
   }
 };
 
-// Store insights in Firebase or a backend service
-export const storeInsights = async (insights: string) => {
-  try {
-    const data = {
-      insights,
-      timestamp: Date.now(),
-    };
+// Example function to analyze properties with Mapbox data
+export const analyzeProperties = async (propertyType: string) => {
+  const properties = await fetchPropertiesFromJson(propertyType);
 
-    await storeJsonData(data);
-    console.log('Insights successfully stored.');
-  } catch (error) {
-    console.error('Error storing insights:', error);
+  if (properties.length === 0) {
+    console.error('No properties found for the selected type.');
+    return null;
   }
+
+  // Generate insights for the fetched properties
+  const insights = await generateCREInsights(properties);
+  console.log('Generated Insights:', insights);
+  return insights;
 };

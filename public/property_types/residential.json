@@ -1,42 +1,47 @@
 [
-    {
-      "id": "property1",
-      "propertyName": "Brickyard Apartments",
-      "type": "Residential",
-      "address": "1070 E Riches Ave, Salt Lake City, UT 84106",
-      "noi": 50000,
-      "value": 250000,
-      "leverage": 0.75,
-      "yieldRate": 0.05,
-      "dscr": 1.25,
-      "opportunity": "High Growth",
-      "image": "/res1.jpg"
-    },
-    {
-      "id": "property2",
-      "propertyName": "The Stack Apartments",
-      "type": "Residential",
-      "address": "Brickyard Office Building, 1111 Brickyard Rd, Salt Lake City, UT 84106",
-      "noi": 100000,
-      "value": 500000,
-      "leverage": 0.65,
-      "yieldRate": 0.08,
-      "dscr": 1.50,
-      "opportunity": "Moderate Growth",
-      "image": "/res2.jpg"
-    },
-    {
-      "id": "property3",
-      "propertyName": "Brickyard Condominiums",
-      "type": "Residential",
-      "address": "1157 Brickyard Rd, Salt Lake City, UT 84106",
-      "noi": 75000,
-      "value": 400000,
-      "leverage": 0.70,
-      "yieldRate": 0.06,
-      "dscr": 1.35,
-      "opportunity": "Steady Growth",
-      "image": "/res3.jpg"
-    }
-  ]
-  
+  {
+    "id": "property1",
+    "propertyName": "Brickyard Apartments",
+    "type": "Residential",
+    "address": "1070 E Riches Ave, Salt Lake City, UT 84106",
+    "latitude": 40.7141,
+    "longitude": -111.8601,
+    "noi": 50000,
+    "value": 250000,
+    "leverage": 0.75,
+    "yieldRate": 0.05,
+    "dscr": 1.25,
+    "opportunity": "High Growth",
+    "image": "/res1.jpg"
+  },
+  {
+    "id": "property2",
+    "propertyName": "The Stack Apartments",
+    "type": "Residential",
+    "address": "Brickyard Office Building, 1111 Brickyard Rd, Salt Lake City, UT 84106",
+    "latitude": 40.7128,
+    "longitude": -111.8556,
+    "noi": 100000,
+    "value": 500000,
+    "leverage": 0.65,
+    "yieldRate": 0.08,
+    "dscr": 1.50,
+    "opportunity": "Moderate Growth",
+    "image": "/res2.jpg"
+  },
+  {
+    "id": "property3",
+    "propertyName": "Brickyard Condominiums",
+    "type": "Residential",
+    "address": "1157 Brickyard Rd, Salt Lake City, UT 84106",
+    "latitude": 40.7134,
+    "longitude": -111.8548,
+    "noi": 75000,
+    "value": 400000,
+    "leverage": 0.70,
+    "yieldRate": 0.06,
+    "dscr": 1.35,
+    "opportunity": "Steady Growth",
+    "image": "/res3.jpg"
+  }
+]

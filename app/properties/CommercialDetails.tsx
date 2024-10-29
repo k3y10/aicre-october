@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import AddressTable from '@/components/AddressTable'; // Import the PropertyForm component
+import AddressTable from '@/components/AddressTable';
 import PropertyForm from '@/components/PropertyForm';
 
 interface Property {
@@ -16,26 +16,21 @@ interface Property {
   image: string | null; // Allow image to be string or null
 }
 
-interface CommercialDetailsProps {
-  selectedPropertyId: string; // ID passed in from the dashboard or sidebar
-}
-
-const CommercialDetails: React.FC<CommercialDetailsProps> = ({ selectedPropertyId }) => {
+const CommercialDetails: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [addresses, setAddresses] = useState<Property[]>([]);
 
-  // Fetch the property data from the commercial.json file and set the selected property
+  // Fetch the property data from the commercial.json file
   useEffect(() => {
     fetch('/property_types/commercial.json')
       .then((response) => response.json())
       .then((data) => {
         setProperties(data);
-        const property = data.find((p: Property) => p.id === selectedPropertyId);
-        setSelectedProperty(property || data[0]); // Default to the first property if not found
+        setSelectedProperty(data[0]); // Default to the first property
       })
       .catch((error) => console.error('Error loading properties:', error));
-  }, [selectedPropertyId]);
+  }, []);
 
   const handleAddNewAddress = (newAddress: Property) => {
     setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
@@ -49,7 +44,7 @@ const CommercialDetails: React.FC<CommercialDetailsProps> = ({ selectedPropertyI
 
   return (
     <div className="property-details">
-      {/* Property selector */}
+      {/* Property Selector */}
       <div className="property-selector">
         <label>Commercial Properties: </label>
         <select
@@ -72,12 +67,36 @@ const CommercialDetails: React.FC<CommercialDetailsProps> = ({ selectedPropertyI
         {selectedProperty.image ? (
           <img src={selectedProperty.image} alt={selectedProperty.propertyName} className="property-image" />
         ) : (
-          <div className="no-image">No Image Available</div> // Fallback if image is null
+          <div className="no-image">No Image Available</div>
         )}
         <div className="property-info">
           <h2>{selectedProperty.propertyName}</h2>
           <p className="property-type">{selectedProperty.type}</p>
           <p className="property-address">{selectedProperty.address}</p>
+        </div>
+      </div>
+
+      {/* Property Stats */}
+      <div className="property-stats">
+        <div className="stat">
+          <p>Net Operating Income (NOI)</p>
+          <h3>${selectedProperty.noi.toLocaleString()}</h3>
+        </div>
+        <div className="stat">
+          <p>Property Value</p>
+          <h3>${selectedProperty.value.toLocaleString()}</h3>
+        </div>
+        <div className="stat">
+          <p>Leverage</p>
+          <h3>{(selectedProperty.leverage * 100).toFixed(2)}%</h3>
+        </div>
+        <div className="stat">
+          <p>Yield Rate</p>
+          <h3>{(selectedProperty.yieldRate * 100).toFixed(2)}%</h3>
+        </div>
+        <div className="stat">
+          <p>Debt Service Coverage Ratio (DSCR)</p>
+          <h3>{selectedProperty.dscr.toFixed(2)}</h3>
         </div>
       </div>
 
@@ -175,11 +194,8 @@ const CommercialDetails: React.FC<CommercialDetailsProps> = ({ selectedPropertyI
 
         .table-section {
           width: 100%;
-          overflow-x: auto; /* Enable horizontal scrolling */
-          overflow-y: auto; /* Enable vertical scrolling */
-          max-height: 400px; /* Set a max height for vertical scrolling */
-          display: flex;
-          justify-content: center;
+          overflow-x: auto; 
+          max-height: 400px;
         }
 
         @media (max-width: 768px) {

@@ -88,40 +88,42 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
 
       <style jsx>{`
         .news-card {
-          background-color: #fff;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          background-color: #f9f9f9;
+          padding: 12px;
+          border-radius: 6px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           position: relative;
           overflow: hidden;
+          font-size: 13px;
         }
 
         .news-card h4 {
-          font-size: 18px;
-          margin-bottom: 12px;
+          font-size: 14px;
+          margin-bottom: 8px;
         }
 
         .news-card h5 {
-          font-size: 16px;
-          margin-top: 10px;
-          margin-bottom: 10px;
+          font-size: 12px;
+          margin-top: 8px;
+          margin-bottom: 8px;
           color: #333;
         }
 
         .news-card p {
-          font-size: 14px;
+          font-size: 11px;
           color: #555;
+          margin-bottom: 8px;
         }
 
         .news-image {
           width: 100%;
-          height: 150px;
+          height: 100px;
           object-fit: cover;
-          border-radius: 5px;
-          margin-bottom: 10px;
+          border-radius: 4px;
+          margin-bottom: 8px;
         }
 
         .news-content {
@@ -137,9 +139,60 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
           opacity: 1;
         }
 
-        @media (max-width: 1024px) {
+        a {
+          font-size: 11px;
+          color: #007bff;
+        }
+
+        @media (max-width: 768px) {
           .news-card {
-            margin-bottom: 20px;
+            padding: 10px;
+          }
+
+          .news-image {
+            height: 80px;
+          }
+
+          .news-card h4 {
+            font-size: 13px;
+          }
+
+          .news-card h5 {
+            font-size: 11px;
+          }
+
+          .news-card p {
+            font-size: 10px;
+          }
+
+          a {
+            font-size: 10px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .news-card {
+            padding: 8px;
+          }
+
+          .news-image {
+            height: 70px;
+          }
+
+          .news-card h4 {
+            font-size: 12px;
+          }
+
+          .news-card h5 {
+            font-size: 10px;
+          }
+
+          .news-card p {
+            font-size: 9px;
+          }
+
+          a {
+            font-size: 9px;
           }
         }
       `}</style>

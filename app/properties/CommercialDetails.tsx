@@ -13,31 +13,50 @@ interface Property {
   yieldRate: number;
   dscr: number;
   opportunity: string;
-  image: string | null; // Allow image to be string or null
+  image: string | null;
 }
 
-const CommercialDetails: React.FC = () => {
+interface CommercialDetailsProps {
+  selectedPropertyId: string; // Accept selectedPropertyId as a prop
+}
+
+const CommercialDetails: React.FC<CommercialDetailsProps> = ({ selectedPropertyId }) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [addresses, setAddresses] = useState<Property[]>([]);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [addresses, setAddresses] = useState<Property[]>([]); // Addresses to display in the table
 
-  // Fetch the property data from the commercial.json file
+  // Fetch property data from the commercial.json file
   useEffect(() => {
-    fetch('/property_types/commercial.json')
-      .then((response) => response.json())
-      .then((data) => {
+    const fetchPropertyData = async () => {
+      try {
+        const response = await fetch('/property_types/commercial.json'); // Fetch commercial.json
+        const data: Property[] = await response.json();
         setProperties(data);
-        setSelectedProperty(data[0]); // Default to the first property
-      })
-      .catch((error) => console.error('Error loading properties:', error));
-  }, []);
+
+        const property = data.find((p) => p.id === selectedPropertyId); // Use the prop to find the property
+        setSelectedProperty(property || data[0]); // Default to the first property if not found
+        setAddresses(data); // Set addresses to display in the table
+      } catch (error) {
+        console.error('Error loading properties:', error);
+      }
+    };
+
+    fetchPropertyData();
+  }, [selectedPropertyId]); // Add selectedPropertyId to the dependency array
 
   const handleAddNewAddress = (newAddress: Property) => {
-    setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
+    setProperties((prevProperties) => [...prevProperties, newAddress]); // Add new property
+    setAddresses((prevAddresses) => [...prevAddresses, newAddress]); // Add new address to the table
   };
 
   const handleRemoveAddress = (index: number) => {
-    setAddresses((prevAddresses) => prevAddresses.filter((_, i) => i !== index));
+    setProperties((prevProperties) => prevProperties.filter((_, i) => i !== index));
+    setAddresses((prevAddresses) => prevAddresses.filter((_, i) => i !== index)); // Update table
+  };
+
+  const toggleFormVisibility = () => {
+    setIsFormVisible((prevState) => !prevState); // Toggle form visibility
   };
 
   if (!selectedProperty) return <div>Loading property details...</div>;
@@ -78,40 +97,43 @@ const CommercialDetails: React.FC = () => {
 
       {/* Property Stats */}
       <div className="property-stats">
-        <div className="stat">
-          <p>Net Operating Income (NOI)</p>
-          <h3>${selectedProperty.noi.toLocaleString()}</h3>
+        <div className="stat-card">
+          <p className="stat-title">Net Operating Income (NOI)</p>
+          <h4 className="stat-value">${selectedProperty.noi.toLocaleString()}</h4>
         </div>
-        <div className="stat">
-          <p>Property Value</p>
-          <h3>${selectedProperty.value.toLocaleString()}</h3>
+        <div className="stat-card">
+          <p className="stat-title">Property Value</p>
+          <h4 className="stat-value">${selectedProperty.value.toLocaleString()}</h4>
         </div>
-        <div className="stat">
-          <p>Leverage</p>
-          <h3>{(selectedProperty.leverage * 100).toFixed(2)}%</h3>
+        <div className="stat-card">
+          <p className="stat-title">Leverage</p>
+          <h4 className="stat-value">{(selectedProperty.leverage * 100).toFixed(2)}%</h4>
         </div>
-        <div className="stat">
-          <p>Yield Rate</p>
-          <h3>{(selectedProperty.yieldRate * 100).toFixed(2)}%</h3>
+        <div className="stat-card">
+          <p className="stat-title">Yield Rate</p>
+          <h4 className="stat-value">{(selectedProperty.yieldRate * 100).toFixed(2)}%</h4>
         </div>
-        <div className="stat">
-          <p>Debt Service Coverage Ratio (DSCR)</p>
-          <h3>{selectedProperty.dscr.toFixed(2)}</h3>
+        <div className="stat-card">
+          <p className="stat-title">Debt Service Coverage Ratio (DSCR)</p>
+          <h4 className="stat-value">{selectedProperty.dscr.toFixed(2)}</h4>
         </div>
       </div>
 
-      {/* Address Table to display saved properties */}
+      {/* Address Table */}
       <div className="table-section">
-        <AddressTable addresses={addresses} onRemove={handleRemoveAddress} />
+        <AddressTable addresses={addresses} onRemove={handleRemoveAddress} /> {/* Pass addresses */}
       </div>
 
-      {/* Property Form to add new properties */}
+      {/* Button to toggle form visibility */}
+      <button className="toggle-form-button" onClick={toggleFormVisibility}>
+        {isFormVisible ? 'Hide Property Form' : 'Add Property +'}
+      </button>
+
+      {/* Property Form */}
       <div className="form-section">
-        <h3>Add New Property</h3>
-        <PropertyForm onAddNewAddress={handleAddNewAddress} />
+        {isFormVisible && <PropertyForm onAddNewAddress={handleAddNewAddress} />}
       </div>
 
-      {/* Styling for the component */}
       <style jsx>{`
         .property-details {
           background-color: #fff;
@@ -160,45 +182,62 @@ const CommercialDetails: React.FC = () => {
 
         .property-stats {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
           gap: 20px;
+          margin-top: 20px;
         }
 
-        .stat {
+        .stat-card {
           background-color: #f8f9fa;
-          padding: 20px;
+          padding: 15px;
           border-radius: 8px;
           text-align: center;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+          transition: transform 0.3s ease;
         }
 
-        .stat p {
+        .stat-card:hover {
+          transform: translateY(-5px);
+        }
+
+        .stat-title {
           font-size: 14px;
           color: #666;
-          margin-bottom: 10px;
+          margin-bottom: 5px;
         }
 
-        .stat h3 {
-          font-size: 24px;
+        .stat-value {
+          font-size: 20px;
+          font-weight: bold;
           margin: 0;
-        }
-
-        .property-selector {
-          margin-top: 5px;
-          margin-bottom: 25px;
-        }
-
-        .form-section {
-          margin-top: 20px;
         }
 
         .table-section {
           width: 100%;
-          overflow-x: auto; 
+          overflow-x: auto;
           max-height: 400px;
         }
 
+        .toggle-form-button {
+          background-color: #007bff;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+          cursor: pointer;
+          margin-top: 20px;
+        }
+
+        .toggle-form-button:hover {
+          background-color: #0056b3;
+        }
+
         @media (max-width: 768px) {
+          .property-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
           .property-stats {
             grid-template-columns: 1fr;
           }

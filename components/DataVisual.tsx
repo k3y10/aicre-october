@@ -43,22 +43,22 @@ const DataVisual: React.FC<DataVisualProps> = ({ addresses }) => {
       {
         label: 'Property Value',
         data: propertyValues,
-        backgroundColor: '#007bff',
-        borderColor: '#007bff',
+        backgroundColor: '#5B6DCD',
+        borderColor: '#5B6DCD',
         borderWidth: 1,
       },
       {
         label: 'NOI',
         data: noiValues,
-        backgroundColor: '#28a745',
-        borderColor: '#28a745',
+        backgroundColor: '#333333',
+        borderColor: '#333333',
         borderWidth: 1,
       },
       {
         label: 'Leverage (%)',
         data: leverageValues,
-        backgroundColor: '#ffc107',
-        borderColor: '#ffc107',
+        backgroundColor: '#A9A9A9',
+        borderColor: '#A9A9A9',
         borderWidth: 1,
       },
     ],
@@ -84,7 +84,7 @@ const DataVisual: React.FC<DataVisualProps> = ({ addresses }) => {
       {
         label: 'Property Value Distribution',
         data: propertyValues,
-        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545'],
+        backgroundColor: ['#5B6DCD', '#333333', '#A9A9A9', '#8FA6D9'],
         borderWidth: 1,
       },
     ],
@@ -110,8 +110,8 @@ const DataVisual: React.FC<DataVisualProps> = ({ addresses }) => {
       {
         label: 'NOI',
         data: noiValues,
-        borderColor: '#28a745',
-        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+        borderColor: '#5B6DCD',
+        backgroundColor: 'rgba(91, 109, 205, 0.2)',
         borderWidth: 2,
         tension: 0.3,
         pointRadius: 3,
@@ -158,7 +158,7 @@ const DataVisual: React.FC<DataVisualProps> = ({ addresses }) => {
         }
 
         .chart-container {
-          background-color: #fff;
+          background-color: #f5f5f5;
           padding: 20px;
           align-content: center;
           border-radius: 8px;

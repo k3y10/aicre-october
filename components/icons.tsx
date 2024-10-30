@@ -46,7 +46,11 @@ import {
   faHouse,
   faMountain,
   faShop,
-  faMapLocationDot
+  faMapLocationDot,
+  faPencil,
+  faMicrophone,
+  faGaugeHigh,
+  faTable
 } from '@fortawesome/free-solid-svg-icons';
 
 interface IconProps extends Omit<FontAwesomeIconProps, 'icon'> {}
@@ -222,4 +226,16 @@ export const Mountain: React.FC<IconProps> = (props) =>
 
 export const Map: React.FC<IconProps> = (props) => 
 <FontAwesomeIcon icon={faMapLocationDot} {...props} />;
+
+export const Pencil: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faPencil} {...props} />;
+
+export const Mic: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faMicrophone} {...props} />;
+
+export const Gauge: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faGaugeHigh} {...props} />;
+
+export const Table: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faTable} {...props} />;
 

@@ -1,151 +1,168 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image'; // For rendering the original image
 
-interface CapTableEntry {
-  investorName: string;
-  ownershipPercentage: number;
-  investmentAmount: number;
-}
-
-interface PropertyData {
-  propertyName: string;
-  capTable?: CapTableEntry[];  // CapTable could be optional
+interface CapitalLayer {
+  name: string;
+  value: number; // Value in millions
+  color: string; // Color to represent the layer
 }
 
 const CapTable: React.FC = () => {
-  const [propertyType, setPropertyType] = useState<string>('commercial');
-  const [properties, setProperties] = useState<PropertyData[]>([]);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
-  const [capTable, setCapTable] = useState<CapTableEntry[]>([]);  // Always initialize as empty array
-  const [loading, setLoading] = useState<boolean>(true);
+  // Define the layers of the capital stack
+  const [capitalLayers, setCapitalLayers] = useState<CapitalLayer[]>([
+    { name: 'Est. Market Value After Stabilization', value: 1000, color: '#B5C5FF' }, // Example value: 500M
+    { name: 'Appraised Value', value: 1000, color: '#A6C5A9' }, // 1B
+    { name: 'Acquisition Cost', value: 3000, color: '#A6C5A9' }, // 3B
+    { name: 'Leverage (Debt Secured Against)', value: 5000, color: '#6B4C35' }, // 5B
+  ]);                                                                   
 
-  // Fetch properties based on selected property type
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/property_types/${propertyType}.json`);
-        const data: PropertyData[] = await response.json();
-        setProperties(data);
-        if (data.length > 0) {
-          setSelectedPropertyId(data[0].propertyName); // Default to the first property
-          setCapTable(data[0].capTable || []);  // Default to an empty array if no capTable exists
-        }
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading properties:', error);
-        setLoading(false);
-      }
-    };
+  const totalValue = capitalLayers.reduce((sum, layer) => sum + layer.value, 0);
 
-    fetchProperties();
-  }, [propertyType]);
-
-  // Update the cap table when a property is selected
-  useEffect(() => {
-    if (!selectedPropertyId) return;
-    const selectedProperty = properties.find(
-      (property) => property.propertyName === selectedPropertyId
+  // Function to update layer value based on user input
+  const handleLayerChange = (index: number, newValue: number) => {
+    const updatedLayers = capitalLayers.map((layer, i) =>
+      i === index ? { ...layer, value: newValue } : layer
     );
-    if (selectedProperty) {
-      setCapTable(selectedProperty.capTable || []);  // Ensure capTable is either set or an empty array
-    }
-  }, [selectedPropertyId, properties]);
-
-  if (loading) {
-    return <div>Loading Cap Table...</div>;
-  }
+    setCapitalLayers(updatedLayers);
+  };
 
   return (
-    <div className="cap-table">
-      <h2>Capitalization Table</h2>
+    <div className="cap-table-container">
+      <h2 className="font-bold">Potential CRE Cap Table</h2>
 
-      {/* Dropdown for Property Type */}
-      <div className="property-selector">
-        <label htmlFor="propertyTypeSelect">Select Property Type: </label>
-        <select
-          id="propertyTypeSelect"
-          value={propertyType}
-          onChange={(e) => setPropertyType(e.target.value)}
-        >
-          <option value="commercial">Commercial</option>
-          <option value="residential">Residential</option>
-          <option value="recreational">Recreational</option>
-          <option value="retail">Retail</option>
-        </select>
+      {/* Capital Stack Visualization */}
+      <div className="capital-stack">
+        {capitalLayers.map((layer, index) => {
+          const heightPercentage = (layer.value / totalValue) * 100;
+          return (
+            <div
+              key={index}
+              className="capital-layer"
+              style={{
+                height: `${heightPercentage}%`,
+                backgroundColor: layer.color,
+              }}
+            >
+              <span className="layer-label">
+                {`${layer.name}: $${(layer.value / 10).toFixed(1)}M`}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Dropdown for Property Selection */}
-      <div className="property-selector">
-        <label htmlFor="propertySelect">Select Property: </label>
-        <select
-          id="propertySelect"
-          value={selectedPropertyId}
-          onChange={(e) => setSelectedPropertyId(e.target.value)}
-        >
-          {properties.map((property) => (
-            <option key={property.propertyName} value={property.propertyName}>
-              {property.propertyName}
-            </option>
-          ))}
-        </select>
+      {/* Slider controls for each capital layer */}
+      <div className="sliders">
+        {capitalLayers.map((layer, index) => (
+          <div key={index} className="slider-container">
+            <label>{layer.name}</label>
+            <input
+              type="range"
+              min={100}
+              max={10000}
+              value={layer.value}
+              onChange={(e) => handleLayerChange(index, Number(e.target.value))}
+            />
+            <span>{`$${(layer.value / 10).toFixed(1)}M`}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Capitalization Table */}
-      <table>
-        <thead>
-          <tr>
-            <th>Investor</th>
-            <th>Ownership (%)</th>
-            <th>Investment Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {capTable.length > 0 ? (
-            capTable.map((entry, index) => (
-              <tr key={index}>
-                <td>{entry.investorName}</td>
-                <td>{entry.ownershipPercentage.toFixed(2)}%</td>
-                <td>${entry.investmentAmount.toLocaleString()}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={3}>No data available for this property.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      {/* Comparison Image Section */}
+      <div className="comparison-section">
+        <h3>Comparison with Original</h3>
+        <Image
+          src="/captable.png" // Ensure the uploaded image is in the /public folder
+          alt="Original Cap Table"
+          width={400}
+          height={500}
+          objectFit="contain"
+        />
+      </div>
 
       <style jsx>{`
-        .cap-table {
-          background-color: #fff;
+        .cap-table-container {
           padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          margin-bottom: 30px;
+          text-align: center;
         }
 
-        .property-selector {
+        h2 {
           margin-bottom: 20px;
         }
 
-        table {
+        .capital-stack {
+          width: 200px;
+          height: 400px;
+          border: 2px solid #333;
+          margin: 0 auto;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+        }
+
+        .capital-layer {
+          position: relative;
           width: 100%;
-          border-collapse: collapse;
+          border-top: 1px solid #000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: height 0.2s ease;
         }
 
-        th, td {
-          padding: 12px;
+        .layer-label {
+          color: #000;
+          font-size: 14px;
+          font-weight: bold;
+          position: absolute;
+        }
+
+        .sliders {
+          margin-top: 30px;
+        }
+
+        .slider-container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+
+        label {
+          margin-right: 15px;
+          width: 150px;
           text-align: left;
-          border-bottom: 1px solid #ddd;
+          font-weight: bold;
         }
 
-        th {
-          background-color: #f4f4f4;
+        input[type='range'] {
+          flex: 1;
+          margin-right: 10px;
         }
 
-        td {
+        .comparison-section {
+          margin-top: 40px;
+        }
+
+        .comparison-section h3 {
+          margin-bottom: 10px;
           color: #333;
+        }
+
+        @media (max-width: 768px) {
+          .capital-stack {
+            height: 300px;
+            width: 150px;
+          }
+
+          .layer-label {
+            font-size: 12px;
+          }
+
+          .slider-container label {
+            width: 120px;
+          }
         }
       `}</style>
     </div>

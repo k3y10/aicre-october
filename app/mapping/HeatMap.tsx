@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Map, { Marker, Popup } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { generateCREInsights } from '@/utilities/aiUtils'; // Import the generateCREInsights function
+import { generateCREInsights } from '@/utilities/aiText'; // Import the generateCREInsights function
 
 interface Property {
   propertyId: string;
@@ -23,18 +23,18 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 const HeatMap: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
+  const [hoveredProperty, setHoveredProperty] = useState<Property | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [propertyType, setPropertyType] = useState<string>('all');
   const [viewport, setViewport] = useState({
-    latitude: 40.7143, // Centered on Salt Lake City (default)
-    longitude: -111.8548,
-    zoom: 14,
+    latitude: 40.70211655777864, // Centered on Salt Lake City (default)
+    longitude: -111.85822203254806,
+    zoom: 15,
   });
   const [insights, setInsights] = useState<string | null>(null); // For displaying insights
   const [loadingInsights, setLoadingInsights] = useState<boolean>(false); // Loading state for insights
 
   useEffect(() => {
-    // Fetch property data based on selected property type
     const fetchData = async () => {
       try {
         const response = await fetch(`/property_types/${propertyType}.json`);
@@ -59,21 +59,16 @@ const HeatMap: React.FC = () => {
 
   const handlePropertyClick = async (property: Property) => {
     setSelectedProperty(property);
-  
-    // Set loading state to true while insights are being generated
     setLoadingInsights(true);
     setInsights(null); // Clear previous insights
-  
-    // Provide a default value for ownershipPercentage if it's undefined
+
     const propertyWithOwnership = {
       ...property,
-      ownershipPercentage: property.ownershipPercentage ?? 100,  // Default to 100% if not provided
+      ownershipPercentage: property.ownershipPercentage ?? 100, // Default to 100% if not provided
     };
-  
-    // Call the generateCREInsights function with the selected property
+
     const generatedInsights = await generateCREInsights([propertyWithOwnership]);
-  
-    // Set the insights and turn off the loading state
+
     setInsights(generatedInsights);
     setLoadingInsights(false);
   };
@@ -101,11 +96,11 @@ const HeatMap: React.FC = () => {
       </div>
 
       {/* Mapbox map */}
-      <div style={{ height: '500px' }}>
+      <div className="map-container">
         <Map
           initialViewState={viewport}
           style={{ width: '100%', height: '100%' }}
-          mapStyle="mapbox://styles/mapbox/streets-v11"
+          mapStyle="mapbox://styles/mapbox/dark-v10" // Use a more visually appealing style
           mapboxAccessToken={MAPBOX_TOKEN}
         >
           {/* Plot property locations as markers */}
@@ -114,22 +109,46 @@ const HeatMap: React.FC = () => {
               key={property.propertyId}  // Use propertyId as the unique key
               latitude={property.latitude}
               longitude={property.longitude}
-              onClick={() => handlePropertyClick(property)}
+              onClick={() => handlePropertyClick(property)} // Fire AI insights on click
             >
               <div
+                className="hexagon"
                 style={{
                   backgroundColor: getColorForProperty(property.noi),
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
                 }}
-              ></div>
+                onMouseEnter={() => setHoveredProperty(property)}  // Show basic info on hover
+                onMouseLeave={() => setHoveredProperty(null)}
+              >
+                ${Math.round(property.noi / 1000)}K
+              </div>
             </Marker>
           ))}
 
-          {/* Display Popup for the selected property */}
-          {selectedProperty && (
+          {/* Display Popup when hovering over a property */}
+          {hoveredProperty && (
+            <Popup
+              latitude={hoveredProperty.latitude}
+              longitude={hoveredProperty.longitude}
+              closeButton={false}  // Disable close button since it's hover-based
+              anchor="top"
+            >
+              <div className="popup-container">
+                <h4>{hoveredProperty.propertyName}</h4>
+                <p>NOI: ${hoveredProperty.noi.toLocaleString()}</p>
+                <p>Value: ${hoveredProperty.value.toLocaleString()}</p>
+                <p>DSCR: {hoveredProperty.dscr}</p>
+                <p>Leverage: {(hoveredProperty.leverage * 100).toFixed(2)}%</p>
+                <img
+                  src={hoveredProperty.image}
+                  alt={hoveredProperty.propertyName}
+                  style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }}
+                />
+              </div>
+            </Popup>
+          )}
+
+          {/* Display Popup for the selected property (AI insights) */}
+          {selectedProperty && insights && (
             <Popup
               latitude={selectedProperty.latitude}
               longitude={selectedProperty.longitude}
@@ -138,17 +157,13 @@ const HeatMap: React.FC = () => {
               onClose={() => setSelectedProperty(null)}
               anchor="top"
             >
-              <div>
+              <div className="popup-container">
                 <h4>{selectedProperty.propertyName}</h4>
                 <p>NOI: ${selectedProperty.noi.toLocaleString()}</p>
                 <p>Value: ${selectedProperty.value.toLocaleString()}</p>
                 <p>DSCR: {selectedProperty.dscr}</p>
                 <p>Leverage: {(selectedProperty.leverage * 100).toFixed(2)}%</p>
-                <img
-                  src={selectedProperty.image}
-                  alt={selectedProperty.propertyName}
-                  style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-                />
+                <p>{insights}</p>
               </div>
             </Popup>
           )}
@@ -188,6 +203,56 @@ const HeatMap: React.FC = () => {
           padding: 8px;
           border-radius: 5px;
           border: 1px solid #ddd;
+        }
+
+        .map-container {
+          height: 600px; /* Increase map height */
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .hexagon {
+          position: relative;
+          width: 30px;
+          height: 17.32px; /* Based on a 30px wide hexagon */
+          background-color: #64C7CC;
+          margin: 8.66px 0; /* To center the hexagon vertically */
+          cursor: pointer;
+          border-left: 2px solid white;
+          border-right: 2px solid white;
+          transform: rotate(90deg); /* Align hexagons to be flat-topped */
+        }
+
+        .hexagon::before,
+        .hexagon::after {
+          content: '';
+          position: absolute;
+          width: 0;
+          border-left: 15px solid transparent;
+          border-right: 15px solid transparent;
+        }
+
+        .hexagon::before {
+          bottom: 100%;
+          border-bottom: 8.66px solid #64C7CC;
+        }
+
+        .hexagon::after {
+          top: 100%;
+          width: 0;
+          border-top: 8.66px solid #64C7CC;
+        }
+
+        .popup-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+
+        .popup-container h4 {
+          margin: 0;
         }
 
         .insightsSection {

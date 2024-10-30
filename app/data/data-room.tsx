@@ -37,20 +37,6 @@ const DataRoom: React.FC = () => {
 
       <DataUpload onDataSync={handleDataSync} />
 
-      {/* Input and Button to fetch Zillow Data */}
-      <div className="zillow-fetch-section">
-        <h4>Fetch Zillow Data by Address</h4>
-        <input
-          type="text"
-          placeholder="Enter property address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          style={{ padding: '10px', marginRight: '10px', width: '80%' }}
-        />
-        <button onClick={fetchZillowData} style={{ padding: '10px', cursor: 'pointer' }}>
-          Fetch Zillow Data
-        </button>
-      </div>
 
       {/* Display uploaded and processed data */}
       {syncData && (

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import AddressTable from '@/components/AddressTable'; // Import the PropertyForm component
-import PropertyForm from '@/components/PropertyForm';
+import AddressTable from '@/components/AddressTable'; // Import the AddressTable component
+import PropertyForm from '@/components/PropertyForm'; // Import the PropertyForm component
 
 interface Property {
   id: string;
@@ -23,40 +23,22 @@ interface RetailDetailsProps {
 const RetailDetails: React.FC<RetailDetailsProps> = ({ selectedPropertyId }) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [addresses, setAddresses] = useState([
-    {
-      propertyName: 'Money Maker',
-      type: 'Residential',
-      address: '123 Main St, Anytown, USA',
-      noi: 50000,
-      value: 250000,
-      leverage: 0.75,
-      yieldRate: 0.05,
-      dscr: 1.25,
-      opportunity: 'High Growth'
-    },
-    {
-      propertyName: 'Red Headed Child',
-      type: 'Commercial',
-      address: '456 Maple Ave, Springfield, USA',
-      noi: 100000,
-      value: 500000,
-      leverage: 0.65,
-      yieldRate: 0.08,
-      dscr: 1.50,
-      opportunity: 'Moderate Growth'
-    }
-  ]);
+  const [addresses, setAddresses] = useState<Property[]>([]); // State for synced addresses
+  const [isFormVisible, setIsFormVisible] = useState(false);
 
-  // Fetch the property data from the correct JSON file for retail properties
+  // Fetch retail properties from retail.json
   useEffect(() => {
     const fetchPropertyData = async () => {
       try {
         const response = await fetch('/property_types/retail.json'); // Fetch retail data
-        const data = await response.json();
+        const data: Property[] = await response.json();
         setProperties(data);
-        const property = data.find((p: Property) => p.id === selectedPropertyId);
+
+        const property = data.find((p) => p.id === selectedPropertyId);
         setSelectedProperty(property || data[0]); // Default to the first property if not found
+
+        // Populate the addresses with the fetched retail data
+        setAddresses(data); // Syncs the fetched retail properties into the addresses state
       } catch (error) {
         console.error('Error loading properties:', error);
       }
@@ -65,19 +47,33 @@ const RetailDetails: React.FC<RetailDetailsProps> = ({ selectedPropertyId }) => 
     fetchPropertyData();
   }, [selectedPropertyId]);
 
+  // Add new address to the table
   const handleAddNewAddress = (newAddress: Property) => {
     setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
   };
 
+  // Remove address from the table
   const handleRemoveAddress = (index: number) => {
     setAddresses((prevAddresses) => prevAddresses.filter((_, i) => i !== index));
   };
 
   if (!selectedProperty) return <div>Loading property details...</div>;
 
+  const toggleFormVisibility = () => {
+    setIsFormVisible((prevState) => !prevState); // Toggle form visibility
+  };
+
+  // Calculate debt (value * leverage)
+  const calculateDebt = (value: number, leverage: number) => {
+    return value * leverage;
+  };
+
+  const debt = calculateDebt(selectedProperty.value, selectedProperty.leverage);
+
+
   return (
     <div className="property-details">
-      {/* Property selector */}
+      {/* Property Selector */}
       <div className="property-selector">
         <label>Retail Properties: </label>
         <select
@@ -109,18 +105,51 @@ const RetailDetails: React.FC<RetailDetailsProps> = ({ selectedPropertyId }) => 
         </div>
       </div>
 
-      {/* Address Table to display saved properties */}
+       {/* Property Stats */}
+       <div className="property-stats">
+        <div className="stat-card">
+          <p className="stat-title">(NOI)</p>
+          <h4 className="stat-value">${selectedProperty.noi.toLocaleString()}</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">Property Value</p>
+          <h4 className="stat-value">${selectedProperty.value.toLocaleString()}</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">Leverage</p>
+          <h4 className="stat-value">{(selectedProperty.leverage * 100).toFixed(2)}%</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">Yield Rate</p>
+          <h4 className="stat-value">{(selectedProperty.yieldRate * 100).toFixed(2)}%</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">(DSCR)</p>
+          <h4 className="stat-value">{selectedProperty.dscr.toFixed(2)}</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">Debt</p>
+          <h4 className="stat-value">${debt.toLocaleString()}</h4> {/* Display calculated debt */}
+        </div>
+      </div>
+
+      {/* Address Table */}
       <div className="table-section">
+        {/* Pass the synced addresses data */}
         <AddressTable addresses={addresses} onRemove={handleRemoveAddress} />
       </div>
 
-      {/* Property Form to add new properties */}
+         {/* Button to toggle form visibility */}
+         <button className="toggle-form-button" onClick={toggleFormVisibility}>
+        {isFormVisible ? 'Hide Property Form' : 'Add Property +'}
+      </button>
+
+      {/* Property Form */}
       <div className="form-section">
-        <h3>Add New Property</h3>
-        <PropertyForm onAddNewAddress={handleAddNewAddress} />
+        {isFormVisible && <PropertyForm onAddNewAddress={handleAddNewAddress} />}
       </div>
 
-      {/* Styling for the component */}
+      {/* Styling */}
       <style jsx>{`
         .property-details {
           background-color: #fff;
@@ -169,48 +198,62 @@ const RetailDetails: React.FC<RetailDetailsProps> = ({ selectedPropertyId }) => 
 
         .property-stats {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
           gap: 20px;
+          margin-top: 20px;
         }
 
-        .stat {
+        .stat-card {
           background-color: #f8f9fa;
-          padding: 20px;
+          padding: 5px;
           border-radius: 8px;
           text-align: center;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+          transition: transform 0.3s ease;
         }
 
-        .stat p {
-          font-size: 14px;
+        .stat-card:hover {
+          transform: translateY(-5px);
+        }
+
+        .stat-title {
+          font-size: 12px;
           color: #666;
-          margin-bottom: 10px;
+          margin-bottom: 5px;
         }
 
-        .stat h3 {
-          font-size: 24px;
+        .stat-value {
+          font-size: 16px;
+          font-weight: bold;
           margin: 0;
-        }
-
-        .property-selector {
-          margin-top: 5px;
-          margin-bottom: 25px;
-        }
-
-        .form-section {
-          margin-top: 20px;
         }
 
         .table-section {
           width: 100%;
-          overflow-x: auto; /* Enable horizontal scrolling */
-          overflow-y: auto; /* Enable vertical scrolling */
-          max-height: 400px; /* Set a max height for vertical scrolling */
-          display: flex;
-          justify-content: center;
+          overflow-x: auto;
+          max-height: 400px;
+        }
+
+        .toggle-form-button {
+          background-color: #007bff;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+          cursor: pointer;
+          margin-top: 20px;
+        }
+
+        .toggle-form-button:hover {
+          background-color: #0056b3;
         }
 
         @media (max-width: 768px) {
+          .property-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
           .property-stats {
             grid-template-columns: 1fr;
           }

@@ -18,7 +18,6 @@ interface AddressTableProps {
 const AddressTable: React.FC<AddressTableProps> = ({ addresses, onRemove }) => {
   return (
     <div className="address-table">
-      <h3>Saved Properties</h3>
       {addresses.length === 0 ? (
         <p className="no-address">No addresses added yet.</p>
       ) : (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import AddressTable from '@/components/AddressTable'; // Import the PropertyForm component
+import AddressTable from '@/components/AddressTable';
 import PropertyForm from '@/components/PropertyForm';
 
 interface Property {
@@ -13,53 +13,66 @@ interface Property {
   yieldRate: number;
   dscr: number;
   opportunity: string;
-  image: string | null; // Allow image to be string or null
+  image: string | null;
 }
 
-interface PropertyDetailsProps {
-  selectedPropertyId: string; // ID passed in from the dashboard or sidebar
-  propertyType: 'all' | 'commercial' | 'residential' | 'recreational' | 'retail'; // Property type to dynamically load data
+interface CommercialDetailsProps {
+  selectedPropertyId: string; // Accept selectedPropertyId as a prop
 }
 
-const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, propertyType }) => {
+const CommercialDetails: React.FC<CommercialDetailsProps> = ({ selectedPropertyId }) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [addresses, setAddresses] = useState<Property[]>([]);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [addresses, setAddresses] = useState<Property[]>([]); // Addresses to display in the table
 
-  // Fetch the property data from the correct JSON file based on the property type
+  // Fetch property data from the commercial.json file
   useEffect(() => {
     const fetchPropertyData = async () => {
       try {
-        const response = await fetch(`/property_types/${propertyType}.json`); // Dynamically load the JSON file for the given property type
-        const data = await response.json();
+        const response = await fetch('/property_types/commercial.json'); // Fetch commercial.json
+        const data: Property[] = await response.json();
         setProperties(data);
-        const property = data.find((p: Property) => p.id === selectedPropertyId);
+
+        const property = data.find((p) => p.id === selectedPropertyId); // Use the prop to find the property
         setSelectedProperty(property || data[0]); // Default to the first property if not found
+        setAddresses(data); // Set addresses to display in the table
       } catch (error) {
         console.error('Error loading properties:', error);
       }
     };
 
     fetchPropertyData();
-  }, [selectedPropertyId, propertyType]);
+  }, [selectedPropertyId]); // Add selectedPropertyId to the dependency array
 
   const handleAddNewAddress = (newAddress: Property) => {
-    setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
+    setProperties((prevProperties) => [...prevProperties, newAddress]); // Add new property
+    setAddresses((prevAddresses) => [...prevAddresses, newAddress]); // Add new address to the table
   };
 
   const handleRemoveAddress = (index: number) => {
-    setAddresses((prevAddresses) => prevAddresses.filter((_, i) => i !== index));
+    setProperties((prevProperties) => prevProperties.filter((_, i) => i !== index));
+    setAddresses((prevAddresses) => prevAddresses.filter((_, i) => i !== index)); // Update table
   };
+
+  const toggleFormVisibility = () => {
+    setIsFormVisible((prevState) => !prevState); // Toggle form visibility
+  };
+
+  // Calculate debt (value * leverage), use optional chaining in case selectedProperty is null
+  const debt = selectedProperty?.value && selectedProperty?.leverage
+    ? selectedProperty.value * selectedProperty.leverage
+    : 0;
 
   if (!selectedProperty) return <div>Loading property details...</div>;
 
   return (
     <div className="property-details">
-      {/* Property selector */}
+      {/* Property Selector */}
       <div className="property-selector">
-        <label>{propertyType.charAt(0).toUpperCase() + propertyType.slice(1)} Properties: </label>
+        <label>Commercial Properties: </label>
         <select
-          value={selectedProperty.id}
+          value={selectedProperty?.id}
           onChange={(e) => {
             const property = properties.find((p) => p.id === e.target.value);
             if (property) setSelectedProperty(property);
@@ -75,30 +88,61 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, p
 
       {/* Property Header */}
       <div className="property-header">
-        {selectedProperty.image ? (
+        {selectedProperty?.image ? (
           <img src={selectedProperty.image} alt={selectedProperty.propertyName} className="property-image" />
         ) : (
-          <div className="no-image">No Image Available</div> // Fallback if image is null
+          <div className="no-image">No Image Available</div>
         )}
         <div className="property-info">
-          <h2>{selectedProperty.propertyName}</h2>
-          <p className="property-type">{selectedProperty.type}</p>
-          <p className="property-address">{selectedProperty.address}</p>
+          <h2>{selectedProperty?.propertyName}</h2>
+          <p className="property-type">{selectedProperty?.type}</p>
+          <p className="property-address">{selectedProperty?.address}</p>
         </div>
       </div>
 
-      {/* Address Table to display saved properties */}
+      {/* Property Stats */}
+      <div className="property-stats">
+        <div className="stat-card">
+          <p className="stat-title">(NOI)</p>
+          <h4 className="stat-value">${selectedProperty?.noi?.toLocaleString() || 0}</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">Property Value</p>
+          <h4 className="stat-value">${selectedProperty?.value?.toLocaleString() || 0}</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">Leverage</p>
+          <h4 className="stat-value">{(selectedProperty?.leverage * 100 || 0).toFixed(2)}%</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">Yield Rate</p>
+          <h4 className="stat-value">{(selectedProperty?.yieldRate * 100 || 0).toFixed(2)}%</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">(DSCR)</p>
+          <h4 className="stat-value">{selectedProperty?.dscr?.toFixed(2) || 0}</h4>
+        </div>
+        <div className="stat-card">
+          <p className="stat-title">Debt</p>
+          <h4 className="stat-value">${debt.toLocaleString()}</h4> {/* Display calculated debt */}
+        </div>
+      </div>
+
+      {/* Address Table */}
       <div className="table-section">
-        <AddressTable addresses={addresses} onRemove={handleRemoveAddress} />
+        <AddressTable addresses={addresses} onRemove={handleRemoveAddress} /> {/* Pass addresses */}
       </div>
 
-      {/* Property Form to add new properties */}
+      {/* Button to toggle form visibility */}
+      <button className="toggle-form-button" onClick={toggleFormVisibility}>
+        {isFormVisible ? 'Hide Property Form' : 'Add Property +'}
+      </button>
+
+      {/* Property Form */}
       <div className="form-section">
-        <h3>Add New Property</h3>
-        <PropertyForm onAddNewAddress={handleAddNewAddress} />
+        {isFormVisible && <PropertyForm onAddNewAddress={handleAddNewAddress} />}
       </div>
 
-      {/* Styling for the component */}
       <style jsx>{`
         .property-details {
           background-color: #fff;
@@ -147,48 +191,62 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, p
 
         .property-stats {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
           gap: 20px;
+          margin-top: 20px;
         }
 
-        .stat {
+        .stat-card {
           background-color: #f8f9fa;
-          padding: 20px;
+          padding: 15px;
           border-radius: 8px;
           text-align: center;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+          transition: transform 0.3s ease;
         }
 
-        .stat p {
-          font-size: 14px;
+        .stat-card:hover {
+          transform: translateY(-5px);
+        }
+
+        .stat-title {
+          font-size: 12px;
           color: #666;
-          margin-bottom: 10px;
+          margin-bottom: 5px;
         }
 
-        .stat h3 {
-          font-size: 24px;
+        .stat-value {
+          font-size: 16px;
+          font-weight: bold;
           margin: 0;
-        }
-
-        .property-selector {
-          margin-top: 5px;
-          margin-bottom: 25px;
-        }
-
-        .form-section {
-          margin-top: 20px;
         }
 
         .table-section {
           width: 100%;
-          overflow-x: auto; /* Enable horizontal scrolling */
-          overflow-y: auto; /* Enable vertical scrolling */
-          max-height: 400px; /* Set a max height for vertical scrolling */
-          display: flex;
-          justify-content: center;
+          overflow-x: auto;
+          max-height: 400px;
+        }
+
+        .toggle-form-button {
+          background-color: #007bff;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+          cursor: pointer;
+          margin-top: 20px;
+        }
+
+        .toggle-form-button:hover {
+          background-color: #0056b3;
         }
 
         @media (max-width: 768px) {
+          .property-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
           .property-stats {
             grid-template-columns: 1fr;
           }
@@ -198,4 +256,4 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId, p
   );
 };
 
-export default PropertyDetails;
+export default CommercialDetails;

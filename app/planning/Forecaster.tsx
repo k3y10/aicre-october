@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 
-// Define the property data interface
 interface PropertyData {
   propertyName: string;
   noi: number;
@@ -11,29 +11,35 @@ interface PropertyData {
   opportunity: string;
 }
 
-// Define the forecast data interface
 interface ForecasterData {
   year: number;
-  noiProjection: number;
-  valueProjection: number;
+  monthlyProjections: Array<{ month: string; noiProjection: number; valueProjection: number }>;
 }
 
 const propertyTypes = ['commercial', 'residential', 'recreational', 'retail'];
+const months = [
+  'January', 'February', 'March', 'April', 'May', 'June', 
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 const Forecaster: React.FC = () => {
   const [propertyType, setPropertyType] = useState<string>('commercial');
   const [properties, setProperties] = useState<PropertyData[]>([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [forecastData, setForecastData] = useState<ForecasterData[]>([]);
+  const [activeYear, setActiveYear] = useState<number | null>(null);
+
+  // Slider states
+  const [rentForecast, setRentForecast] = useState<number>(0);
+  const [householdIncome, setHouseholdIncome] = useState<number>(0);
 
   useEffect(() => {
-    // Fetch the properties from the selected property type
     const fetchProperties = async () => {
       try {
         const response = await fetch(`/property_types/${propertyType}.json`);
         const data: PropertyData[] = await response.json();
         setProperties(data);
-        setSelectedPropertyId(data[0]?.propertyName || ''); // Default to the first property
+        setSelectedPropertyId(data[0]?.propertyName || '');
       } catch (error) {
         console.error('Error loading property data:', error);
       }
@@ -45,29 +51,28 @@ const Forecaster: React.FC = () => {
   useEffect(() => {
     if (!selectedPropertyId) return;
 
-    // Find the selected property and calculate projections
     const selectedProperty = properties.find((property) => property.propertyName === selectedPropertyId);
     if (selectedProperty) {
-      const projections = calculateProjections(selectedProperty);
+      const projections = calculateProjections(selectedProperty, rentForecast, householdIncome);
       setForecastData(projections);
     }
-  }, [selectedPropertyId, properties]);
+  }, [selectedPropertyId, properties, rentForecast, householdIncome]);
 
-  const calculateProjections = (property: PropertyData): ForecasterData[] => {
+  const calculateProjections = (property: PropertyData, rentAdjustment: number, incomeAdjustment: number): ForecasterData[] => {
     const projections: ForecasterData[] = [];
-    const projectionYears = 5;
-    const growthRate = 0.05; // Assume a 5% growth rate for NOI and value each year
+    const baseGrowthRate = 0.05;
 
-    for (let i = 0; i < projectionYears; i++) {
+    const rentGrowthRate = baseGrowthRate + rentAdjustment / 100;
+    const incomeGrowthRate = baseGrowthRate + incomeAdjustment / 100;
+
+    for (let i = 0; i < 5; i++) {
       const year = new Date().getFullYear() + i;
-      const noiProjection = property.noi * Math.pow(1 + growthRate, i);
-      const valueProjection = property.value * Math.pow(1 + growthRate, i);
-
-      projections.push({
-        year,
-        noiProjection,
-        valueProjection,
-      });
+      const monthlyProjections = months.map((month, monthIndex) => ({
+        month,
+        noiProjection: property.noi * Math.pow(1 + rentGrowthRate, i + monthIndex / 12),
+        valueProjection: property.value * Math.pow(1 + incomeGrowthRate, i + monthIndex / 12),
+      }));
+      projections.push({ year, monthlyProjections });
     }
 
     return projections;
@@ -79,6 +84,10 @@ const Forecaster: React.FC = () => {
 
   const handlePropertyIdChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPropertyId(e.target.value);
+  };
+
+  const toggleYear = (year: number) => {
+    setActiveYear(activeYear === year ? null : year);
   };
 
   return (
@@ -98,7 +107,6 @@ const Forecaster: React.FC = () => {
           </select>
         </label>
 
-        {/* Property Selector */}
         <label>
           Property:
           <select value={selectedPropertyId} onChange={handlePropertyIdChange}>
@@ -111,25 +119,74 @@ const Forecaster: React.FC = () => {
         </label>
       </div>
 
-      {/* Forecast Data Table */}
-      <table>
-        <thead>
-          <tr>
-            <th>Year</th>
-            <th>NOI Projection</th>
-            <th>Value Projection</th>
-          </tr>
-        </thead>
-        <tbody>
-          {forecastData.map((entry, index) => (
-            <tr key={index}>
-              <td>{entry.year}</td>
-              <td>${entry.noiProjection.toLocaleString()}</td>
-              <td>${entry.valueProjection.toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Sliders for Rent Forecast and Household Income */}
+      <div className="sliders">
+        <div className="slider">
+          <label>Rent Forecast: {rentForecast}%</label>
+          <input
+            type="range"
+            min={-10}
+            max={10}
+            value={rentForecast}
+            onChange={(e) => setRentForecast(Number(e.target.value))}
+          />
+        </div>
+        <div className="slider">
+          <label>Household Income Score: {householdIncome}%</label>
+          <input
+            type="range"
+            min={-10}
+            max={10}
+            value={householdIncome}
+            onChange={(e) => setHouseholdIncome(Number(e.target.value))}
+          />
+        </div>
+      </div>
+
+      {/* Yearly Forecast Tabs */}
+      <div className="year-tabs">
+        {forecastData.map((yearData) => (
+          <div key={yearData.year} className="year-tab">
+            <h3 onClick={() => toggleYear(yearData.year)} className="year-header">
+              {yearData.year} {activeYear === yearData.year ? '▼' : '▶'}
+            </h3>
+            {activeYear === yearData.year && (
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>NOI Projection</th>
+                      <th>Value Projection</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {yearData.monthlyProjections.map((monthData, index) => (
+                      <tr key={index}>
+                        <td>{monthData.month}</td>
+                        <td>${monthData.noiProjection.toLocaleString()}</td>
+                        <td>${monthData.valueProjection.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Comparison Image */}
+      <div className="comparison-section">
+        <h3>Original Scenario Comparison</h3>
+        <Image
+          src="/forecast.png"
+          alt="Original Scenario Table"
+          width={800}
+          height={200}
+          objectFit="contain"
+        />
+      </div>
 
       <style jsx>{`
         .forecaster {
@@ -138,36 +195,106 @@ const Forecaster: React.FC = () => {
           border-radius: 8px;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
           margin-bottom: 30px;
+          max-width: 1000px;
+          margin: auto;
         }
 
         .selectors {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 15px;
           margin-bottom: 20px;
         }
 
         label {
-          margin-right: 15px;
+          flex: 1;
         }
 
         select {
-          margin-left: 10px;
+          width: 100%;
           padding: 8px;
           border-radius: 5px;
           border: 1px solid #ddd;
         }
 
+        .sliders {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+
+        .slider {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        input[type='range'] {
+          width: 100%;
+          max-width: 300px;
+        }
+
+        .year-tabs {
+          margin-top: 20px;
+        }
+
+        .year-tab {
+          margin-bottom: 10px;
+        }
+
+        .year-header {
+          font-weight: bold;
+          cursor: pointer;
+          padding: 10px;
+          background-color: #f0f0f0;
+          border-radius: 5px;
+        }
+
+        .table-container {
+          overflow-x: auto;
+        }
+
         table {
           width: 100%;
           border-collapse: collapse;
+          margin-top: 10px;
+          min-width: 500px;
         }
 
         th, td {
-          padding: 12px;
+          padding: 10px;
           text-align: left;
           border-bottom: 1px solid #ddd;
         }
 
         th {
           background-color: #f4f4f4;
+        }
+
+        .comparison-section {
+          margin-top: 40px;
+          text-align: center;
+        }
+
+        .comparison-section h3 {
+          margin-bottom: 10px;
+          color: #333;
+        }
+
+        @media (max-width: 768px) {
+          .selectors, .sliders {
+            flex-direction: column;
+          }
+
+          .table-container {
+            overflow-x: scroll;
+          }
+
+          .year-header {
+            font-size: 1rem;
+          }
         }
       `}</style>
     </div>

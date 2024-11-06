@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileUpload } from '@/components/icons';
-import DataUpload from '@/components/DataUpload';
+import DataUpload from '@/components/tools/DataUpload';
 
 const DataRoom: React.FC = () => {
   const [syncData, setSyncData] = useState<any>(null);  // To handle uploaded property data
@@ -42,9 +42,23 @@ const DataRoom: React.FC = () => {
       {syncData && (
         <div className="data-sync-results">
           <h4>Uploaded Data Results:</h4>
-          <pre>{JSON.stringify(syncData, null, 2)}</pre>
+          <div>
+            <h5>Property Details:</h5>
+            <p>Address: {syncData.property_details.address}</p>
+          </div>
+          <div>
+            <h5>Tenants:</h5>
+            {syncData.tenants.map((tenant: any, index: number) => (
+              <div key={index} className="tenant-details">
+                <p>Name: {tenant.tenant_name}</p>
+                <p>Amount: {tenant.amount}</p>
+                <p>Status: {tenant.status}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+
 
       {/* Display Zillow scraped data */}
       {zillowData && (

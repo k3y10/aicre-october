@@ -18,8 +18,11 @@ import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import custom scraping logic
-from api.data.zillow import scrape_zillow_data
 from api.data.census import get_census_data
+from api.data.extract_property_data import extract_data_from_pdf
+from api.data.news import get_national_news, get_regional_news, get_emerging_news
+from api.data.zillow import scrape_zillow_data
+
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -105,14 +108,52 @@ def upload_file():
 
     return jsonify({'error': 'File processing failed'}), 500
 
-# Route for scraping Zillow data
-@app.route('/zillow', methods=['GET'])
+# Endpoint to handle PDF file uploads and extraction
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file:
+        # Save the uploaded file temporarily
+        filename = secure_filename(file.filename)
+        file_path = os.path.join('/tmp', filename)
+        file.save(file_path)
+
+        # Call the extraction function for property data
+        extracted_info = extract_data_from_pdf(file_path)
+
+        # Store the extracted info in Firebase Firestore
+        doc_ref = db.collection('documents').add({
+            'filename': filename,
+            'extracted_info': json.loads(extracted_info),
+            'timestamp': datetime.datetime.utcnow()
+        })
+
+        # Store the file in Firebase Storage
+        blob = bucket.blob(f"documents/{filename}")
+        blob.upload_from_filename(file_path)
+        file_url = blob.public_url
+
+        # Return extracted info and file URL
+        return jsonify({
+            'details': json.loads(extracted_info),
+            'file_url': file_url
+        }), 200
+
+    return jsonify({'error': 'File processing failed'}), 500
+
+# Endpoint for Zillow Data
+@app.route('/api/zillow', methods=['GET'])
 def zillow_data():
-    address = request.args.get('address')
-    if not address:
+    user_input = request.args.get('address')
+    if not user_input:
         return jsonify({'error': 'Address is required'}), 400
-    data = scrape_zillow_data(address)
-    return jsonify(data)
+
 
 # Route for getting Census data
 @app.route('/census', methods=['GET'])
@@ -122,6 +163,24 @@ def census_data():
         return jsonify({'error': 'Region is required'}), 400
     data = get_census_data(region)
     return jsonify(data)
+
+# Endpoint for National News
+@app.route('/api/news/national', methods=['GET'])
+def national_news():
+    news_data = get_national_news()
+    return jsonify(news_data)
+
+# Endpoint for Regional News
+@app.route('/api/news/regional', methods=['GET'])
+def regional_news():
+    news_data = get_regional_news()
+    return jsonify(news_data)
+
+# Endpoint for Emerging News
+@app.route('/api/news/emerging', methods=['GET'])
+def emerging_news():
+    news_data = get_emerging_news()
+    return jsonify(news_data)
 
 # Main entry point for running the Flask app on the specified port and host
 if __name__ == '__main__':

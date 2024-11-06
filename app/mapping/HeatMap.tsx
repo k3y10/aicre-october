@@ -1,135 +1,163 @@
 import React, { useState, useEffect } from 'react';
-import Map, { Marker, Popup } from 'react-map-gl';
+import Map, { Marker, Popup, ViewStateChangeEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { generateCREInsights } from '@/utilities/aiText'; // Import the generateCREInsights function
+import { generateCREInsights } from '@/utilities/aiText';
 
-interface Property {
+interface Tenant {
+  id: string;
   propertyId: string;
   propertyName: string;
+  type: string;
+  address: string;
   noi: number;
   value: number;
-  dscr: number;
   leverage: number;
-  location: string;
+  yieldRate: number;
+  dscr: number;
+  opportunity: string;
+  image: string;
   latitude: number;
   longitude: number;
-  image: string;
+  location?: string;
   ownershipPercentage?: number;
 }
 
-const propertyTypes = ['all', 'commercial', 'residential', 'recreational', 'retail'];
+interface Property {
+  id: string;
+  propertyId: string;
+  propertyName: string;
+  type: string;
+  address: string;
+  noi: number;
+  value: number;
+  leverage: number;
+  yieldRate: number;
+  dscr: number;
+  opportunity: string;
+  image: string;
+  latitude: number;
+  longitude: number;
+  location?: string;
+  ownershipPercentage?: number;
+  tenants?: Tenant[];
+}
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
+const mapToPropertyInfo = (property: Property | Tenant): Property & { location: string; ownershipPercentage: number } => ({
+  ...property,
+  location: property.location || 'Unknown location',
+  ownershipPercentage: property.ownershipPercentage ?? 100,
+});
+
 const HeatMap: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [hoveredProperty, setHoveredProperty] = useState<Property | null>(null);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [propertyType, setPropertyType] = useState<string>('all');
+  const [hoveredProperty, setHoveredProperty] = useState<Tenant | Property | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<Tenant | Property | null>(null);
+  const [insights, setInsights] = useState<string | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState<boolean>(false);
   const [viewport, setViewport] = useState({
-    latitude: 40.70211655777864, // Centered on Salt Lake City (default)
-    longitude: -111.85822203254806,
-    zoom: 15,
+    latitude: 47.78097617278332,
+    longitude: -103.81320935023722,
+    zoom: 2,
   });
-  const [insights, setInsights] = useState<string | null>(null); // For displaying insights
-  const [loadingInsights, setLoadingInsights] = useState<boolean>(false); // Loading state for insights
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch(`/property_types/${propertyType}.json`);
-        const data: Property[] = await response.json();
-        setProperties(data);
+        const brickyardResponse = await fetch('/property_types/brickyardplaza.json');
+        const portolaResponse = await fetch('/property_types/portolaplaza.json');
+
+        const brickyardData: Property = await brickyardResponse.json();
+        const portolaData: Property = await portolaResponse.json();
+
+        setProperties([brickyardData, portolaData]);
       } catch (error) {
         console.error('Error loading property data:', error);
       }
     };
-    fetchData();
-  }, [propertyType]);
 
-  const getColorForProperty = (noi: number) => {
-    if (noi > 80000) {
-      return 'green'; // High NOI
-    } else if (noi < 50000) {
-      return 'red'; // Low NOI
-    } else {
-      return '#f1c40f'; // Medium NOI
+    loadData();
+  }, []);
+
+  const getColorForType = (type: string) => {
+    switch (type) {
+      case 'Commercial': return 'blue';
+      case 'Recreational': return 'orange';
+      case 'Residential': return 'purple';
+      case 'Retail': return 'red';
+      default: return 'gray';
     }
   };
 
-  const handlePropertyClick = async (property: Property) => {
-    setSelectedProperty(property);
+  const handlePropertyClick = async (property: Tenant | Property) => {
+    const propertyInfo = mapToPropertyInfo(property);
+    setSelectedProperty(propertyInfo);
     setLoadingInsights(true);
-    setInsights(null); // Clear previous insights
+    setInsights(null);
 
-    const propertyWithOwnership = {
-      ...property,
-      ownershipPercentage: property.ownershipPercentage ?? 100, // Default to 100% if not provided
-    };
-
-    const generatedInsights = await generateCREInsights([propertyWithOwnership]);
-
+    const generatedInsights = await generateCREInsights([propertyInfo]);
     setInsights(generatedInsights);
     setLoadingInsights(false);
   };
 
-  const handlePropertyTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setPropertyType(e.target.value);
+  const handleViewportChange = (event: ViewStateChangeEvent) => {
+    setViewport(event.viewState);
   };
 
   return (
     <div className="heatmapPage">
       <h1>CRE Property Heatmap</h1>
 
-      {/* Dropdown to select the property type */}
-      <div className="selectors">
-        <label>
-          Property Type:
-          <select value={propertyType} onChange={handlePropertyTypeChange}>
-            {propertyTypes.map((type) => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {/* Mapbox map */}
       <div className="map-container">
         <Map
-          initialViewState={viewport}
-          style={{ width: '100%', height: '100%' }}
-          mapStyle="mapbox://styles/mapbox/dark-v10" // Use a more visually appealing style
+          {...viewport}
+          style={{ width: '100%', height: '600px' }}
+          mapStyle="mapbox://styles/mapbox/dark-v10"
           mapboxAccessToken={MAPBOX_TOKEN}
+          onMove={handleViewportChange}
         >
-          {/* Plot property locations as markers */}
           {properties.map((property) => (
             <Marker
-              key={property.propertyId}  // Use propertyId as the unique key
+              key={property.id}
               latitude={property.latitude}
               longitude={property.longitude}
-              onClick={() => handlePropertyClick(property)} // Fire AI insights on click
+              onClick={() => handlePropertyClick(property)}
             >
               <div
-                className="hexagon"
-                style={{
-                  backgroundColor: getColorForProperty(property.noi),
-                }}
-                onMouseEnter={() => setHoveredProperty(property)}  // Show basic info on hover
+                className="marker main-property-marker"
+                style={{ backgroundColor: getColorForType(property.type) }}
+                onMouseEnter={() => setHoveredProperty(property)}
                 onMouseLeave={() => setHoveredProperty(null)}
               >
-                ${Math.round(property.noi / 1000)}K
+                {property.propertyName}
               </div>
             </Marker>
           ))}
 
-          {/* Display Popup when hovering over a property */}
+          {viewport.zoom >= 13 && properties.flatMap((property) => property.tenants || []).map((tenant) => (
+            <Marker
+              key={tenant.id}
+              latitude={tenant.latitude}
+              longitude={tenant.longitude}
+              onClick={() => handlePropertyClick(tenant)}
+            >
+              <div
+                className="marker tenant-marker"
+                style={{ backgroundColor: getColorForType(tenant.type) }}
+                onMouseEnter={() => setHoveredProperty(tenant)}
+                onMouseLeave={() => setHoveredProperty(null)}
+              >
+                {tenant.propertyName}
+              </div>
+            </Marker>
+          ))}
+
           {hoveredProperty && (
             <Popup
               latitude={hoveredProperty.latitude}
               longitude={hoveredProperty.longitude}
-              closeButton={false}  // Disable close button since it's hover-based
+              closeButton={false}
               anchor="top"
             >
               <div className="popup-container">
@@ -138,16 +166,10 @@ const HeatMap: React.FC = () => {
                 <p>Value: ${hoveredProperty.value.toLocaleString()}</p>
                 <p>DSCR: {hoveredProperty.dscr}</p>
                 <p>Leverage: {(hoveredProperty.leverage * 100).toFixed(2)}%</p>
-                <img
-                  src={hoveredProperty.image}
-                  alt={hoveredProperty.propertyName}
-                  style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }}
-                />
               </div>
             </Popup>
           )}
 
-          {/* Display Popup for the selected property (AI insights) */}
           {selectedProperty && insights && (
             <Popup
               latitude={selectedProperty.latitude}
@@ -163,16 +185,15 @@ const HeatMap: React.FC = () => {
                 <p>Value: ${selectedProperty.value.toLocaleString()}</p>
                 <p>DSCR: {selectedProperty.dscr}</p>
                 <p>Leverage: {(selectedProperty.leverage * 100).toFixed(2)}%</p>
-                <p>{insights}</p>
               </div>
             </Popup>
           )}
         </Map>
       </div>
 
-      {/* Insights Section */}
-      <div className="insightsSection">
-        <h3>Insights and Recommendations</h3>
+      {/* Insights Box */}
+      <div className="insights-box">
+        <h3>Insights</h3>
         {loadingInsights ? (
           <div className="loading-spinner">
             <div className="spinner"></div>
@@ -188,88 +209,49 @@ const HeatMap: React.FC = () => {
           padding: 20px;
         }
 
-        h1 {
-          text-align: center;
-          margin-bottom: 20px;
-        }
-
-        .selectors {
-          margin-bottom: 20px;
-          text-align: center;
-        }
-
-        select {
-          margin-left: 10px;
-          padding: 8px;
-          border-radius: 5px;
-          border: 1px solid #ddd;
-        }
-
         .map-container {
-          height: 600px; /* Increase map height */
-          border-radius: 10px;
+          height: 600px;
+          border-radius: 8px;
           overflow: hidden;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         }
 
-        .hexagon {
-          position: relative;
-          width: 30px;
-          height: 17.32px; /* Based on a 30px wide hexagon */
-          background-color: #64C7CC;
-          margin: 8.66px 0; /* To center the hexagon vertically */
+        .marker {
           cursor: pointer;
-          border-left: 2px solid white;
-          border-right: 2px solid white;
-          transform: rotate(90deg); /* Align hexagons to be flat-topped */
+          border-radius: 50%;
+          padding: 4px 8px;
+          color: white;
+          font-size: 12px;
+          font-weight: bold;
+          text-align: center;
         }
 
-        .hexagon::before,
-        .hexagon::after {
-          content: '';
-          position: absolute;
-          width: 0;
-          border-left: 15px solid transparent;
-          border-right: 15px solid transparent;
+        .main-property-marker {
+          background-color: black;
         }
 
-        .hexagon::before {
-          bottom: 100%;
-          border-bottom: 8.66px solid #64C7CC;
-        }
-
-        .hexagon::after {
-          top: 100%;
-          width: 0;
-          border-top: 8.66px solid #64C7CC;
+        .tenant-marker {
+          opacity: 0.8;
         }
 
         .popup-container {
           display: flex;
           flex-direction: column;
-          align-items: center;
           text-align: center;
+          color: white;
         }
 
-        .popup-container h4 {
-          margin: 0;
-        }
-
-        .insightsSection {
+        .insights-box {
           margin-top: 20px;
           padding: 15px;
-          background-color: #f9f9f9;
+          background-color: #333;
+          color: white;
           border-radius: 6px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
 
-        .insightsSection h3 {
+        .insights-box h3 {
           margin-bottom: 10px;
-          font-size: 18px;
-        }
-
-        .insightsSection p {
-          font-size: 14px;
         }
 
         .loading-spinner {
@@ -278,8 +260,8 @@ const HeatMap: React.FC = () => {
         }
 
         .spinner {
-          border: 4px solid #f3f3f3; /* Light grey */
-          border-top: 4px solid #3498db; /* Blue */
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #3498db;
           border-radius: 50%;
           width: 20px;
           height: 20px;
@@ -290,6 +272,11 @@ const HeatMap: React.FC = () => {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+          text-align: center;
+          margin-bottom: 20px;
         }
       `}</style>
     </div>

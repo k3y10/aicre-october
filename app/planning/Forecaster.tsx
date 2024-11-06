@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 interface PropertyData {
+  id: string;
   propertyName: string;
-  noi: number;
+  noiYTD: number;
   value: number;
   leverage: number;
   yieldRate: number;
@@ -16,14 +17,12 @@ interface ForecasterData {
   monthlyProjections: Array<{ month: string; noiProjection: number; valueProjection: number }>;
 }
 
-const propertyTypes = ['commercial', 'residential', 'recreational', 'retail'];
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June', 
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
 const Forecaster: React.FC = () => {
-  const [propertyType, setPropertyType] = useState<string>('commercial');
   const [properties, setProperties] = useState<PropertyData[]>([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [forecastData, setForecastData] = useState<ForecasterData[]>([]);
@@ -33,25 +32,31 @@ const Forecaster: React.FC = () => {
   const [rentForecast, setRentForecast] = useState<number>(0);
   const [householdIncome, setHouseholdIncome] = useState<number>(0);
 
+  // Load property data from JSON files dynamically
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await fetch(`/property_types/${propertyType}.json`);
-        const data: PropertyData[] = await response.json();
-        setProperties(data);
-        setSelectedPropertyId(data[0]?.propertyName || '');
+        const propertyFiles = ['brickyardplaza.json', 'portolaplaza.json']; // Add more files as needed
+        const propertyData: PropertyData[] = await Promise.all(
+          propertyFiles.map(async (file) => {
+            const response = await fetch(`/property_types/${file}`);
+            return await response.json();
+          })
+        );
+        setProperties(propertyData);
+        setSelectedPropertyId(propertyData[0]?.id || '');
       } catch (error) {
         console.error('Error loading property data:', error);
       }
     };
 
     fetchProperties();
-  }, [propertyType]);
+  }, []);
 
   useEffect(() => {
     if (!selectedPropertyId) return;
 
-    const selectedProperty = properties.find((property) => property.propertyName === selectedPropertyId);
+    const selectedProperty = properties.find((property) => property.id === selectedPropertyId);
     if (selectedProperty) {
       const projections = calculateProjections(selectedProperty, rentForecast, householdIncome);
       setForecastData(projections);
@@ -69,17 +74,13 @@ const Forecaster: React.FC = () => {
       const year = new Date().getFullYear() + i;
       const monthlyProjections = months.map((month, monthIndex) => ({
         month,
-        noiProjection: property.noi * Math.pow(1 + rentGrowthRate, i + monthIndex / 12),
+        noiProjection: property.noiYTD * Math.pow(1 + rentGrowthRate, i + monthIndex / 12),
         valueProjection: property.value * Math.pow(1 + incomeGrowthRate, i + monthIndex / 12),
       }));
       projections.push({ year, monthlyProjections });
     }
 
     return projections;
-  };
-
-  const handlePropertyTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setPropertyType(e.target.value);
   };
 
   const handlePropertyIdChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -94,24 +95,13 @@ const Forecaster: React.FC = () => {
     <div className="forecaster">
       <h2>Financial Forecaster</h2>
 
-      {/* Property Type Selector */}
+      {/* Property Selector */}
       <div className="selectors">
-        <label>
-          Property Type:
-          <select value={propertyType} onChange={handlePropertyTypeChange}>
-            {propertyTypes.map((type) => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-        </label>
-
         <label>
           Property:
           <select value={selectedPropertyId} onChange={handlePropertyIdChange}>
             {properties.map((property) => (
-              <option key={property.propertyName} value={property.propertyName}>
+              <option key={property.id} value={property.id}>
                 {property.propertyName}
               </option>
             ))}

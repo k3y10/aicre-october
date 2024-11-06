@@ -1,254 +1,240 @@
 import React, { useEffect, useState } from 'react';
-import AddressTable from '@/components/AddressTable';
-import PropertyForm from '@/components/PropertyForm';
 
 interface Property {
   id: string;
   propertyName: string;
-  type: string;
   address: string;
-  noi: number;
+  noiYTD: number;
+  cashYTD: number;
+  netCashFlowThisMonth: number;
+  vacancy: number;
   value: number;
   leverage: number;
   yieldRate: number;
   dscr: number;
   opportunity: string;
-  image: string | null;
+  tenants: Tenant[];
 }
 
-interface CommercialDetailsProps {
-  selectedPropertyId: string; // Accept selectedPropertyId as a prop
+interface Tenant {
+  id: string;
+  propertyName: string;
+  termEnd?: string;
+  notes?: string;
 }
 
-const CommercialDetails: React.FC<CommercialDetailsProps> = ({ selectedPropertyId }) => {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [isFormVisible, setIsFormVisible] = useState(false);
-  const [addresses, setAddresses] = useState<Property[]>([]); // Addresses to display in the table
+interface PropertyDetailsProps {
+  selectedPropertyId: string;
+}
 
-  // Fetch property data from the commercial.json file
+const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId }) => {
+  const [property, setProperty] = useState<Property | null>(null);
+
   useEffect(() => {
     const fetchPropertyData = async () => {
       try {
-        const response = await fetch('/property_types/commercial.json'); // Fetch commercial.json
-        const data: Property[] = await response.json();
-        setProperties(data);
-
-        const property = data.find((p) => p.id === selectedPropertyId); // Use the prop to find the property
-        setSelectedProperty(property || data[0]); // Default to the first property if not found
-        setAddresses(data); // Set addresses to display in the table
+        const response = await fetch(`/property_types/${selectedPropertyId}.json`);
+        if (!response.ok) throw new Error(`Error ${response.status}: Property data not found`);
+        const data = await response.json();
+        setProperty(data);
       } catch (error) {
-        console.error('Error loading properties:', error);
+        console.error('Error loading property data:', error);
       }
     };
 
     fetchPropertyData();
-  }, [selectedPropertyId]); // Add selectedPropertyId to the dependency array
+  }, [selectedPropertyId]);
 
-  const handleAddNewAddress = (newAddress: Property) => {
-    setProperties((prevProperties) => [...prevProperties, newAddress]); // Add new property
-    setAddresses((prevAddresses) => [...prevAddresses, newAddress]); // Add new address to the table
+  if (!property) return <div>Loading property details...</div>;
+
+  const renderNoteIcon = (note: string) => {
+    if (note.toLowerCase().includes("traffic")) return <span className="note-icon traffic">⬆</span>;
+    if (note.toLowerCase().includes("ar challenges")) return <span className="note-icon ar">⬇</span>;
+    if (note.toLowerCase().includes("180 days notice")) return <span className="note-icon notice">★</span>;
+    if (note.toLowerCase().includes("opportunity")) return <span className="note-icon opportunity">⭐</span>;
+    return null;
   };
-
-  const handleRemoveAddress = (index: number) => {
-    setProperties((prevProperties) => prevProperties.filter((_, i) => i !== index));
-    setAddresses((prevAddresses) => prevAddresses.filter((_, i) => i !== index)); // Update table
-  };
-
-  const toggleFormVisibility = () => {
-    setIsFormVisible((prevState) => !prevState); // Toggle form visibility
-  };
-
-  // Calculate debt (value * leverage), use optional chaining in case selectedProperty is null
-  const debt = selectedProperty?.value && selectedProperty?.leverage
-    ? selectedProperty.value * selectedProperty.leverage
-    : 0;
-
-  if (!selectedProperty) return <div>Loading property details...</div>;
 
   return (
-    <div className="property-details">
-      {/* Property Selector */}
-      <div className="property-selector">
-        <label>Commercial Properties: </label>
-        <select
-          value={selectedProperty?.id}
-          onChange={(e) => {
-            const property = properties.find((p) => p.id === e.target.value);
-            if (property) setSelectedProperty(property);
-          }}
-        >
-          {properties.map((property) => (
-            <option key={property.id} value={property.id}>
-              {property.propertyName}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Property Header */}
-      <div className="property-header">
-        {selectedProperty?.image ? (
-          <img src={selectedProperty.image} alt={selectedProperty.propertyName} className="property-image" />
-        ) : (
-          <div className="no-image">No Image Available</div>
-        )}
+    <div className="property-detail-page">
+      <div className="header">
+        <div className="map-image">Map Image</div>
         <div className="property-info">
-          <h2>{selectedProperty?.propertyName}</h2>
-          <p className="property-type">{selectedProperty?.type}</p>
-          <p className="property-address">{selectedProperty?.address}</p>
+          <h2>{property.propertyName}</h2>
+          <p>{property.address}</p>
         </div>
       </div>
 
-      {/* Property Stats */}
-      <div className="property-stats">
-        <div className="stat-card">
-          <p className="stat-title">(NOI)</p>
-          <h4 className="stat-value">${selectedProperty?.noi?.toLocaleString() || 0}</h4>
-        </div>
-        <div className="stat-card">
-          <p className="stat-title">Property Value</p>
-          <h4 className="stat-value">${selectedProperty?.value?.toLocaleString() || 0}</h4>
-        </div>
-        <div className="stat-card">
-          <p className="stat-title">Leverage</p>
-          <h4 className="stat-value">{(selectedProperty?.leverage * 100 || 0).toFixed(2)}%</h4>
-        </div>
-        <div className="stat-card">
-          <p className="stat-title">Yield Rate</p>
-          <h4 className="stat-value">{(selectedProperty?.yieldRate * 100 || 0).toFixed(2)}%</h4>
-        </div>
-        <div className="stat-card">
-          <p className="stat-title">(DSCR)</p>
-          <h4 className="stat-value">{selectedProperty?.dscr?.toFixed(2) || 0}</h4>
-        </div>
-        <div className="stat-card">
-          <p className="stat-title">Debt</p>
-          <h4 className="stat-value">${debt.toLocaleString()}</h4> {/* Display calculated debt */}
-        </div>
+      <h3>End of Last Month</h3>
+      <div className="monthly-summary">
+        <div>NOI YTD: ${property.noiYTD?.toLocaleString() || '0'}</div>
+        <div>Cash YTD: ${property.cashYTD?.toLocaleString() || '0'}</div>
+        <div>Net Cash Flow This Month: ${property.netCashFlowThisMonth?.toLocaleString() || '0'}</div>
+        <div>Vacancy: {property.vacancy || 'N/A'}%</div>
       </div>
 
-      {/* Address Table */}
-      <div className="table-section">
-        <AddressTable addresses={addresses} onRemove={handleRemoveAddress} /> {/* Pass addresses */}
-      </div>
+      <h3>Tenants</h3>
+      <table className="tenants-table">
+        <thead>
+          <tr>
+            <th>Tenant</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {property.tenants.map((tenant) => (
+            <tr key={tenant.id}>
+              <td>{tenant.propertyName}</td>
+              <td>
+                {renderNoteIcon(tenant.notes || '')} {tenant.notes || 'No notes available'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-      {/* Button to toggle form visibility */}
-      <button className="toggle-form-button" onClick={toggleFormVisibility}>
-        {isFormVisible ? 'Hide Property Form' : 'Add Property +'}
-      </button>
-
-      {/* Property Form */}
-      <div className="form-section">
-        {isFormVisible && <PropertyForm onAddNewAddress={handleAddNewAddress} />}
+      <h3>Operating Reports</h3>
+      <div className="reports">
+        <div className="report-icon">PDF - Oct 2024</div>
+        <div className="report-icon">PDF - Q3 2024 Summary</div>
+        <div className="report-icon">PDF - Sep 2024</div>
+        <button className="upload-button">Upload Report</button>
       </div>
 
       <style jsx>{`
-        .property-details {
-          background-color: #fff;
+        .property-detail-page {
           padding: 20px;
+          background-color: #fff;
           border-radius: 8px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          margin-bottom: 30px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .property-header {
+        .header {
           display: flex;
           align-items: center;
+          gap: 20px;
           margin-bottom: 20px;
         }
 
-        .property-image {
+        .map-image {
           width: 150px;
           height: 150px;
-          object-fit: cover;
-          border-radius: 8px;
-          margin-right: 20px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .no-image {
-          width: 150px;
-          height: 150px;
+          background-color: #e0e0e0;
           display: flex;
-          justify-content: center;
           align-items: center;
-          background-color: #f0f0f0;
+          justify-content: center;
           border-radius: 8px;
-          margin-right: 20px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .property-info {
-          flex: 1;
-        }
-
-        .property-type,
-        .property-address {
-          margin-top: 5px;
-          color: #555;
-        }
-
-        .property-stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          gap: 20px;
-          margin-top: 20px;
-        }
-
-        .stat-card {
-          background-color: #f8f9fa;
-          padding: 15px;
-          border-radius: 8px;
-          text-align: center;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-          transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-          transform: translateY(-5px);
-        }
-
-        .stat-title {
-          font-size: 12px;
-          color: #666;
-          margin-bottom: 5px;
-        }
-
-        .stat-value {
-          font-size: 16px;
-          font-weight: bold;
+        .property-info h2 {
+          font-size: 24px;
           margin: 0;
         }
 
-        .table-section {
-          width: 100%;
-          overflow-x: auto;
-          max-height: 400px;
+        .property-info p {
+          margin: 4px 0;
+          color: #555;
         }
 
-        .toggle-form-button {
-          background-color: #007bff;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 5px;
-          cursor: pointer;
+        h3 {
+          font-size: 20px;
+          margin-top: 20px;
+          margin-bottom: 10px;
+        }
+
+        .monthly-summary {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          background-color: #f8f9fa;
+          padding: 10px;
+          border-radius: 8px;
+          text-align: center;
+          font-size: 14px;
+          margin-bottom: 20px;
+        }
+
+        .tenants-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 10px;
+          background-color: #f8f9fa;
+        }
+
+        .tenants-table th,
+        .tenants-table td {
+          padding: 8px;
+          border: 1px solid #ccc;
+          text-align: left;
+          font-size: 14px;
+        }
+
+        .note-icon {
+          margin-right: 5px;
+          font-size: 16px;
+        }
+
+        .note-icon.traffic {
+          color: green;
+        }
+
+        .note-icon.ar {
+          color: red;
+        }
+
+        .note-icon.notice,
+        .note-icon.opportunity {
+          color: gold;
+        }
+
+        .reports {
+          display: flex;
+          gap: 10px;
+          align-items: center;
           margin-top: 20px;
         }
 
-        .toggle-form-button:hover {
+        .report-icon {
+          background-color: #e0e0e0;
+          padding: 10px;
+          border-radius: 5px;
+          text-align: center;
+          font-size: 14px;
+          cursor: pointer;
+        }
+
+        .upload-button {
+          background-color: #007bff;
+          color: white;
+          padding: 10px 15px;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 14px;
+        }
+
+        .upload-button:hover {
           background-color: #0056b3;
         }
 
         @media (max-width: 768px) {
-          .property-header {
+          .property-detail-page {
+            padding: 15px;
+          }
+
+          .monthly-summary {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .header {
             flex-direction: column;
             align-items: flex-start;
           }
 
-          .property-stats {
-            grid-template-columns: 1fr;
+          .tenants-table th,
+          .tenants-table td {
+            font-size: 12px;
+            padding: 6px;
           }
         }
       `}</style>
@@ -256,4 +242,4 @@ const CommercialDetails: React.FC<CommercialDetailsProps> = ({ selectedPropertyI
   );
 };
 
-export default CommercialDetails;
+export default PropertyDetails;

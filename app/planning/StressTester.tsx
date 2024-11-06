@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface PropertyData {
+  id: string;
   propertyName: string;
   noi: number;
   value: number;
@@ -8,22 +9,26 @@ interface PropertyData {
 }
 
 const StressTester: React.FC = () => {
-  const [propertyType, setPropertyType] = useState<string>('commercial');
   const [properties, setProperties] = useState<PropertyData[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<PropertyData | null>(null);
   const [interestRate, setInterestRate] = useState<number>(3); // Default rate
   const [noiImpact, setNoiImpact] = useState<number>(0);
   const [valueImpact, setValueImpact] = useState<number>(0);
 
-  // Fetch properties based on selected property type
+  // Fetch properties dynamically from JSON files
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const response = await fetch(`/property_types/${propertyType}.json`);
-        const data: PropertyData[] = await response.json();
-        setProperties(data);
-        if (data.length > 0) {
-          setSelectedProperty(data[0]); // Default to the first property
+        const propertyFiles = ['brickyardplaza.json', 'portolaplaza.json']; // List the property files here
+        const propertyData: PropertyData[] = await Promise.all(
+          propertyFiles.map(async (file) => {
+            const response = await fetch(`/property_types/${file}`);
+            return await response.json();
+          })
+        );
+        setProperties(propertyData);
+        if (propertyData.length > 0) {
+          setSelectedProperty(propertyData[0]); // Default to the first property
         }
       } catch (error) {
         console.error('Error loading properties:', error);
@@ -31,7 +36,7 @@ const StressTester: React.FC = () => {
     };
 
     fetchProperties();
-  }, [propertyType]);
+  }, []);
 
   const handleTest = () => {
     if (!selectedProperty) return;
@@ -50,38 +55,22 @@ const StressTester: React.FC = () => {
     <div className="stress-tester">
       <h2>Financial Stress Tester</h2>
 
-      {/* Property Type Selector */}
-      <div className="form-group">
-        <label htmlFor="propertyType">Select Property Type:</label>
-        <select
-          id="propertyType"
-          value={propertyType}
-          onChange={(e) => setPropertyType(e.target.value)}
-          className="input-field"
-        >
-          <option value="commercial">Commercial</option>
-          <option value="residential">Residential</option>
-          <option value="recreational">Recreational</option>
-          <option value="retail">Retail</option>
-        </select>
-      </div>
-
       {/* Property Selector */}
       {properties.length > 0 && (
         <div className="form-group">
           <label htmlFor="propertySelect">Select Property:</label>
           <select
             id="propertySelect"
-            value={selectedProperty?.propertyName || ''}
+            value={selectedProperty?.id || ''}
             onChange={(e) =>
               setSelectedProperty(
-                properties.find((property) => property.propertyName === e.target.value) || null
+                properties.find((property) => property.id === e.target.value) || null
               )
             }
             className="input-field"
           >
             {properties.map((property) => (
-              <option key={property.propertyName} value={property.propertyName}>
+              <option key={property.id} value={property.id}>
                 {property.propertyName}
               </option>
             ))}

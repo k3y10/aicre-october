@@ -27,29 +27,28 @@ import {
   Table
 } from '@/components/icons';
 import PropertyDetails from './properties/PropertyDetails';
-import CommercialDetails from './properties/CommercialDetails';
-import RecreationalDetails from './properties/RecreationalDetails';
-import ResidentialDetails from './properties/ResidentialDetails';
-import RetailDetails from './properties/RetailDetails';
 import DataRoom from './data/data-room';
-import NewsTable from '@/components/NewsTable';
+import NewsTable from '@/components/tables/NewsTable';
 import Image from 'next/image';
-import Profile from '@/components/Profile';
-import PortfolioSummary from '@/components/PortfolioSummary';
-import AddressTable from '@/components/AddressTable';
-import PropertyForm from '@/components/PropertyForm';
-import DataVisual from '@/components/DataVisual';
+import Profile from '@/components/profile/Profile';
+import PortfolioSummary from '@/components/features/PortfolioSummary';
+import PropertyTable from '@/components/tables/PropertyTable';
+import PropertyForm from '@/components/tools/PropertyForm';
+import DataVisual from '@/components/tools/DataVisual';
 import CapTable from './planning/CapTable';
 import Forecaster from './planning/Forecaster';
 import SREOTable from './planning/SREOTable';
 import StressTester from './planning/StressTester';
-import StockTicker from '@/components/StockTicker';
+import StockTicker from '@/components/features/RateTicker';
 import Scenario from './planning/Scenario';
 import HeatMap from './mapping/HeatMap';
 import IdealMap from './mapping/IdealMap';
 import AicreReport from './reporting/AicreReport';
+import MapBoxSearch from '@/components/mapping/MapBoxSearch'; // Adjust the import path as necessary
 
-type Address = {
+
+type Tenant = {
+  id: string;
   propertyName: string;
   type: string;
   address: string;
@@ -59,7 +58,31 @@ type Address = {
   yieldRate: number;
   dscr: number;
   opportunity: string;
+  image: string;
+  latitude: number;
+  longitude: number;
 };
+
+type Property = {
+  id: string;
+  propertyName: string;
+  city: string;
+  type: string;
+  address: string;
+  noi: number;
+  noiYTD: number;
+  cashYTD: number;
+  netCashFlowThisMonth: number;
+  vacancy: number;
+  value: number;
+  leverage: number;
+  yieldRate: number;
+  dscr: number;
+  opportunity: string;
+  tenants?: Tenant[]; // Optional array for tenants
+};
+
+
 
 // Tools for the dashboard with updated icons
 const tools = [
@@ -100,62 +123,86 @@ const DashboardAiCRE: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(false); // State for toggling form visibility
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('property1'); // default property ID
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [propertyType, setPropertyType] = useState<string>('all'); // Default to 'all'
-  
-  const [addresses, setAddresses] = useState([
-    {
-      propertyName: 'Money Maker',
-      type: 'Residential',
-      address: '123 Main St, Anytown, USA',
-      noi: 50000,
-      value: 250000,
-      leverage: 0.75,
-      yieldRate: 0.05,
-      dscr: 1.25,
-      opportunity: 'High Growth',
-    },
-    {
-      propertyName: 'Red Headed Child',
-      type: 'Commercial',
-      address: '456 Maple Ave, Springfield, USA',
-      noi: 100000,
-      value: 500000,
-      leverage: 0.65,
-      yieldRate: 0.08,
-      dscr: 1.5,
-      opportunity: 'Moderate Growth',
-    },
-  ]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [addresses, setAddresses] = useState<string[]>([]);
 
   // Toggle form visibility
   const toggleForm = () => {
     setIsFormOpen((prev) => !prev);
   };
 
-  useEffect(() => {
-    // Fetch data dynamically based on the selected property type
-    const fetchAddresses = async () => {
-      try {
-        const response = await fetch(`/property_types/${propertyType}.json`);
-        const data = await response.json();
-        setAddresses(data); // Set the addresses from the fetched data
-      } catch (error) {
-        console.error('Error fetching addresses:', error);
-      }
-    };
-
-    fetchAddresses();
-  }, [propertyType]);
-
-  const handleRemoveAddress = (index: number) => {
-    setAddresses((prevAddresses) => prevAddresses.filter((_, i) => i !== index)); // Remove by index
+  const fetchProperties = async () => {
+    try {
+      // Fetch JSON data
+      const brickyardData = await fetch('/property_types/brickyardplaza.json').then((res) => res.json());
+      const portolaData = await fetch('/property_types/portolaplaza.json').then((res) => res.json());
+  
+      // Combine properties with all required fields from the Property interface
+      const combinedProperties = [
+        brickyardData,
+        portolaData
+      ].map((property) => ({
+        id: property.id,
+        propertyName: property.propertyName,
+        city: property.city,
+        noiYTD: property.noiYTD,
+        cashYTD: property.cashYTD,
+        netCashFlowThisMonth: property.netCashFlowThisMonth,
+        vacancy: property.vacancy,
+        type: property.type || "Unknown", // Default values if the fields aren't available
+        address: property.address || "N/A",
+        noi: property.noi || 0,
+        value: property.value || 0,
+        leverage: property.leverage || 0,
+        yieldRate: property.yieldRate || 0,
+        dscr: property.dscr || 0,
+        opportunity: property.opportunity || "Unknown",
+        image: property.image || "",
+        latitude: property.latitude || 0,
+        longitude: property.longitude || 0,
+        tenants: property.tenants || [], // Optional tenants array
+      }));
+  
+      setProperties(combinedProperties as Property[]);
+    } catch (error) {
+      console.error("Error loading properties:", error);
+    }
   };
 
-  // Add a new property to the address table
-  const handleAddNewAddress = (newAddress: Address) => {
-    setAddresses((prevAddresses) => [...prevAddresses, newAddress]);
+  const handlePropertyClick = (propertyId: string) => {
+    // Store the selected property ID in the state or trigger another action
+    setSelectedPropertyId(propertyId);
+
+    // Show a modal, set additional details, or any other custom action
+    console.log(`Navigate to property page for ${propertyId}`);
+  };
+
+  const handleBackToList = () => {
+    setSelectedPropertyId(null); // Reset selected property to go back to the table view
+  };
+
+
+  // Set selected property ID and activate PropertyDetails view
+  const handlePropertySelection = (propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+    setActiveTool('PropertyDetails');
+  };
+
+   // Callback function to handle added addresses from MapBoxSearch
+   const handleAddAddress = (address: string) => {
+    setAddresses((prevAddresses) => [...prevAddresses, address]);
+  };
+
+  const handleViewProperty = (propertyId: string) => {
+    // Implement the logic for viewing a property
+    console.log(`Viewing property with ID: ${propertyId}`);
+  };
+  
+  const handleAddNewProperty = (newProperty: Property) => {
+    setProperties((prevProperties) => [...prevProperties, newProperty]);
   };
 
   const toggleSidebar = () => {
@@ -202,63 +249,45 @@ const DashboardAiCRE: React.FC = () => {
     setActiveTool(null); // Reset active tool, so the home content is displayed
   };
 
-  // Calculate Portfolio Summary
   const calculateSummary = () => {
-    const totalValue = addresses.reduce((sum, property) => sum + property.value, 0);
-    const totalNOI = addresses.reduce((sum, property) => sum + property.noi, 0);
-    const avgLeverage =
-      addresses.length > 0 ? addresses.reduce((sum, property) => sum + property.leverage, 0) / addresses.length : 0;
-    const avgYieldRate =
-      addresses.length > 0 ? addresses.reduce((sum, property) => sum + property.yieldRate, 0) / addresses.length : 0;
-    const avgDSCR =
-      addresses.length > 0 ? addresses.reduce((sum, property) => sum + property.dscr, 0) / addresses.length : 0;
+    const totalValue = properties.reduce((sum, property) => sum + property.value, 0);
+    const totalNOI = properties.reduce((sum, property) => sum + property.noi, 0);
+    const totalCashYTD = properties.reduce((sum, property) => sum + property.cashYTD, 0);
+    const totalEquity = totalValue - (totalValue * 0.65);
 
-    return { totalValue, totalNOI, avgLeverage, avgYieldRate, avgDSCR };
+    return { totalValue, totalNOI, totalCashYTD, totalEquity };
   };
 
-  const { totalValue, totalNOI, avgLeverage, avgYieldRate, avgDSCR } = calculateSummary();
-  const debt = totalValue * avgLeverage; // Example calculation for debt
-  const equity = totalValue - debt; // Example calculation for equity
+  const { totalValue, totalNOI, totalCashYTD, totalEquity } = calculateSummary();
   
-  const renderActiveTool = () => {
-    const tool = tools.find((t) => t.name === activeTool);
-    if (tool) {
-      switch (tool.name) {
-        case 'PropertyDetails':
-          return <PropertyDetails selectedPropertyId={selectedPropertyId}/>;
-        case 'CommercialDetails':
-          return <CommercialDetails selectedPropertyId={selectedPropertyId}/>;
-        case 'RecreationalDetails':
-          return <RecreationalDetails selectedPropertyId={selectedPropertyId} />;
-        case 'ResidentialDetails':
-          return <ResidentialDetails selectedPropertyId={selectedPropertyId} />;
-        case 'RetailDetails':
-          return <RetailDetails selectedPropertyId={selectedPropertyId} />;
-        case 'CapTable':
-          return <CapTable />;
-        case 'Forecaster':
-          return <Forecaster />;
-        case 'SREOTable':
-          return <SREOTable />;
-        case 'StressTester':
-          return <StressTester />;
-        case 'Scenario':
-          return <Scenario />;
-        case 'HeatMap':
-          return <HeatMap />;
-        case 'IdealMap':
-          return <IdealMap />;
-        case 'DataRoom':
-          return <DataRoom />;
-        case 'NewsTable':
-          return <NewsTable newsType="regional" />;
-        case 'AicreReport':
-          return <AicreReport />;
-        default:
-          return renderToolGrid();
-      }
-    } else {
-      return renderToolGrid();
+   // Renders the correct tool based on activeTool
+   const renderActiveTool = () => {
+    if (activeTool === 'PropertyDetails' && selectedPropertyId) {
+      return <PropertyDetails selectedPropertyId={selectedPropertyId} />;
+    }
+    switch (activeTool) {
+      case 'CapTable':
+        return <CapTable />;
+      case 'Forecaster':
+        return <Forecaster />;
+      case 'SREOTable':
+        return <SREOTable />;
+      case 'StressTester':
+        return <StressTester />;
+      case 'Scenario':
+        return <Scenario />;
+      case 'HeatMap':
+        return <HeatMap />;
+      case 'IdealMap':
+        return <IdealMap />;
+      case 'DataRoom':
+        return <DataRoom />;
+      case 'NewsTable':
+        return <NewsTable newsType="regional" />;
+      case 'AicreReport':
+        return <AicreReport />;
+      default:
+        return renderToolGrid();
     }
   };
 
@@ -322,22 +351,16 @@ const DashboardAiCRE: React.FC = () => {
           </ul>
           <ul className="sub-menu-toggle" onClick={toggleSubMenu1}>
             <li>
-              <HomeIcon /> Properties {isSubMenuOpen1 ? <ChevronUpIcon /> : <ChevronDownIcon />}
+              <HomeIcon /> Property Details {isSubMenuOpen1 ? <ChevronUpIcon /> : <ChevronDownIcon />}
             </li>
           </ul>
           {isSubMenuOpen1 && (
             <ul className="sub-menu">
-              <li onClick={() => handleToolClick('RetailDetails')}>
-                <Shop /> Property 1
+              <li onClick={() => handlePropertySelection('portolaplaza')}>
+                <BuildingIcon /> Portola Plaza
               </li>
-              <li onClick={() => handleToolClick('PropertyDetails')}>
-                <BuildingIcon /> Property 2
-              </li>
-              <li onClick={() => handleToolClick('ResidentialDetails')}>
-                <House /> Property 3
-              </li>
-              <li onClick={() => handleToolClick('RecreationalDetails')}>
-                <Mountain /> Property 4
+              <li onClick={() => handlePropertySelection('brickyardplaza')}>
+                <BuildingIcon /> Brickyard Plaza
               </li>
             </ul>
           )}
@@ -408,21 +431,15 @@ const DashboardAiCRE: React.FC = () => {
             <div className="header">
               <div className="portfolio-summary mt-4">
                 <StockTicker />
-                <PortfolioSummary
-                  totalValue={totalValue}
-                  totalNOI={totalNOI}
-                  totalLeverage={avgLeverage}
-                  totalYieldRate={avgYieldRate}
-                  totalDSCR={avgDSCR}
-                  leverageTrend={avgLeverage >= 0.65 ? 'up' : 'down'}
-                  yieldRateTrend={avgYieldRate >= 0.07 ? 'up' : 'down'}
-                  dscrTrend={avgDSCR >= 1.4 ? 'up' : 'down'}
-                  equity={totalValue - debt}
-                  debt={debt} 
-                />
+                <PortfolioSummary/>
+              </div>
+              <div className='address-table'>
+              <MapBoxSearch onAddAddress={handleAddAddress} />
               </div>
               <div className="address-table">
-                <AddressTable addresses={addresses} onRemove={handleRemoveAddress} />
+                <div className="main-content">
+                  <PropertyTable onPropertyClick={handlePropertySelection} />
+                </div>
               </div>
               <div className="news-section">
                 <div className="news-grid">
@@ -439,9 +456,6 @@ const DashboardAiCRE: React.FC = () => {
                     <NewsTable newsType="emerging" />
                   </div>
                 </div>
-              </div>
-              <div className="data-visual-container">
-                <DataVisual addresses={addresses} />
               </div>
             </div>
           </div>
@@ -501,7 +515,7 @@ const DashboardAiCRE: React.FC = () => {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 5px;
       }
 
       .gear-icon {
@@ -569,7 +583,8 @@ const DashboardAiCRE: React.FC = () => {
 
       .nav-menu li {
         padding: 16px 22px;
-        font-size: 17px;
+        font-size: 15px;
+        font-weight: bold;
         color: #666;
         cursor: pointer;
         display: flex;
@@ -603,7 +618,7 @@ const DashboardAiCRE: React.FC = () => {
 
       .sub-menu li {
         padding: 10px;
-        font-size: 15px;
+        font-size: 12px;
         color: #555;
         cursor: pointer;
         border-radius: 6px;
@@ -793,6 +808,7 @@ const DashboardAiCRE: React.FC = () => {
       }
 
       @media (max-width: 768px) {
+      
         .news-grid {
           grid-template-columns: 1fr;
         }

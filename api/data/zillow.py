@@ -1,20 +1,15 @@
 import os
 import json
 import logging
-from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import requests
 from bs4 import BeautifulSoup
 
-# Define the path for geckodriver
-GECKODRIVER_PATH = "/usr/local/bin/geckodriver"
+# Define the path for saved data
 DATA_FILE_PATH = os.path.join(os.path.dirname(__file__), 'saved_data.json')
 
 # Set up logging configuration
 logging.basicConfig(
-    filename='geckodriver.log',
+    filename='scrape.log',
     filemode='a',
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -22,31 +17,27 @@ logging.basicConfig(
 
 def scrape_zillow_data(user_input):
     """
-    This function takes in an address, neighborhood, city, or zip code and scrapes Zillow data.
+    This function takes in an address, neighborhood, city, or zip code and scrapes Zillow data using BeautifulSoup.
     """
-
-    # Initialize Selenium WebDriver with headless Firefox for efficiency
-    options = webdriver.FirefoxOptions()
-    options.add_argument('--headless')  # Run in headless mode
-
     logging.info(f"Starting scrape for input: {user_input}")
 
-    # Initialize Firefox WebDriver with geckodriver
-    driver = webdriver.Firefox(service=Service(GECKODRIVER_PATH), options=options)
+    # Format the input for the Zillow URL
+    formatted_input = user_input.replace(' ', '-')
+    zillow_url = f'https://www.zillow.com/homes/{formatted_input}_rb/'
 
     try:
-        # Format the input for the Zillow URL based on user input
-        formatted_input = user_input.replace(' ', '-')
-        zillow_url = f'https://www.zillow.com/homes/{formatted_input}_rb/'
-
-        logging.info(f"Navigating to URL: {zillow_url}")
-        driver.get(zillow_url)
-
-        # Wait for page load and check if key elements are available
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".ds-summary-row")))
+        # Send a GET request to Zillow
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        response = requests.get(zillow_url, headers=headers)
+        
+        if response.status_code != 200:
+            logging.error(f"Failed to fetch data from Zillow. Status code: {response.status_code}")
+            return {"error": f"Failed to fetch data from Zillow. Status code: {response.status_code}"}
 
         # Parse the page using BeautifulSoup
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
 
         # Scrape property data
         price = soup.select_one('.ds-summary-row').text.strip() if soup.select_one('.ds-summary-row') else 'N/A'
@@ -58,8 +49,8 @@ def scrape_zillow_data(user_input):
 
         # Scrape additional property data (optional)
         zestimate = soup.select_one('.ds-estimate-value').text.strip() if soup.select_one('.ds-estimate-value') else 'N/A'
-        year_built = soup.select_one('.ds-home-fact-list-item:contains("Year Built")').text.strip() if soup.select_one('.ds-home-fact-list-item:contains("Year Built")') else 'N/A'
-        property_taxes = soup.select_one('.ds-home-fact-list-item:contains("Property Tax")').text.strip() if soup.select_one('.ds-home-fact-list-item:contains("Property Tax")') else 'N/A'
+        year_built = next((item.text for item in soup.select('.ds-home-fact-list-item') if 'Year Built' in item.text), 'N/A')
+        property_taxes = next((item.text for item in soup.select('.ds-home-fact-list-item') if 'Property Tax' in item.text), 'N/A')
 
         logging.info(f"Scraped additional data - Zestimate: {zestimate}, Year Built: {year_built}, Taxes: {property_taxes}")
 
@@ -92,10 +83,6 @@ def scrape_zillow_data(user_input):
     except Exception as e:
         logging.error(f"Error occurred while scraping {user_input}: {e}")
         return {'error': str(e)}
-
-    finally:
-        driver.quit()
-        logging.info(f"WebDriver for {user_input} closed")
 
 def save_to_json(data):
     """

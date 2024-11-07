@@ -18,10 +18,10 @@ import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import custom scraping logic
-from api.data.census import get_census_data
-from api.data.extract_property_data import extract_data_from_pdf
-from api.data.news import get_national_news, get_regional_news, get_emerging_news
-from api.data.zillow import scrape_zillow_data
+from api.tools.census import get_census_data
+from api.tools.extract_property_data import extract_data_from_pdf
+from api.tools.news import get_national_news, get_regional_news, get_emerging_news
+from api.tools.zillow import scrape_zillow_data
 
 
 # Initialize Flask app
@@ -70,7 +70,7 @@ def analyze_document_with_gpt4(document_text):
     except Exception as e:
         return str(e)
 
-# Route for uploading and processing documents with GPT-4
+# Consolidated route for uploading and processing documents with GPT-4 and extracting property data
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -86,51 +86,21 @@ def upload_file():
         file_path = os.path.join('/tmp', filename)
         file.save(file_path)
 
-        # Assuming text-based files (CSV, JSON, or plain text)
+        # Assuming text-based files (CSV, JSON, or plain text) for GPT-4 analysis
         with open(file_path, 'r') as f:
             document_text = f.read()
 
         # Call GPT-4 for document analysis
-        extracted_info = analyze_document_with_gpt4(document_text)
-
-        # Store the extracted info in Firebase Firestore
-        doc_ref = db.collection('documents').add({
-            'filename': filename,
-            'extracted_info': extracted_info,
-            'timestamp': datetime.datetime.utcnow()
-        })
-
-        # Return extracted info and store metadata
-        return jsonify({
-            'details': extracted_info,
-            'file_url': f"https://storage.googleapis.com/{bucket.name}/{filename}"
-        }), 200
-
-    return jsonify({'error': 'File processing failed'}), 500
-
-# Endpoint to handle PDF file uploads and extraction
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-
-    if file:
-        # Save the uploaded file temporarily
-        filename = secure_filename(file.filename)
-        file_path = os.path.join('/tmp', filename)
-        file.save(file_path)
+        gpt_extracted_info = analyze_document_with_gpt4(document_text)
 
         # Call the extraction function for property data
-        extracted_info = extract_data_from_pdf(file_path)
+        property_extracted_info = extract_data_from_pdf(file_path)
 
         # Store the extracted info in Firebase Firestore
         doc_ref = db.collection('documents').add({
             'filename': filename,
-            'extracted_info': json.loads(extracted_info),
+            'gpt_extracted_info': gpt_extracted_info,
+            'property_extracted_info': json.loads(property_extracted_info),
             'timestamp': datetime.datetime.utcnow()
         })
 
@@ -141,7 +111,8 @@ def upload_file():
 
         # Return extracted info and file URL
         return jsonify({
-            'details': json.loads(extracted_info),
+            'gpt_details': gpt_extracted_info,
+            'property_details': json.loads(property_extracted_info),
             'file_url': file_url
         }), 200
 

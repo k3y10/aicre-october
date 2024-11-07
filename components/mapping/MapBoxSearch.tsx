@@ -86,7 +86,7 @@ const MapBoxSearch: React.FC<MapBoxSearchProps> = ({ onAddAddress }) => {
         <Map
           {...viewport}
           style={{ width: '100%', height: '300px' }}
-          mapStyle="mapbox://styles/mapbox/dark-v10"
+          mapStyle="mapbox://styles/mapbox/streets-v12"
           mapboxAccessToken={MAPBOX_TOKEN}
           onMove={(event) => setViewport(event.viewState)}
         >

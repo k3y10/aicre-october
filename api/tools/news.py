@@ -1,4 +1,3 @@
-# scraper.py
 import os
 import json
 import requests
@@ -12,6 +11,25 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
+# Define the data directory path for saving JSON files
+DATA_DIR = os.path.join(os.path.dirname(__file__), '../data')
+
+# Ensure the data directory exists
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
+def save_news_to_file(filename, data):
+    """Save news data to a JSON file in the data directory."""
+    try:
+        file_path = os.path.join(DATA_DIR, filename)
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=4)
+        logging.info(f"Data saved to {filename}")
+        return True
+    except Exception as e:
+        logging.error(f"Error saving news data to {filename}: {e}")
+        return False
 
 # Function to scrape Google News
 def scrape_google_news(search_query):
@@ -53,10 +71,16 @@ def scrape_google_news(search_query):
 
 # Convenience functions for each type of news
 def get_national_news():
-    return scrape_google_news("National Commercial Real Estate News")
+    news_data = scrape_google_news("National Commercial Real Estate News")
+    save_news_to_file('national_news.json', news_data)
+    return news_data
 
 def get_regional_news():
-    return scrape_google_news("Regional Commercial Real Estate News")
+    news_data = scrape_google_news("Regional Commercial Real Estate News")
+    save_news_to_file('regional_news.json', news_data)
+    return news_data
 
 def get_emerging_news():
-    return scrape_google_news("Emerging Commercial Real Estate News")
+    news_data = scrape_google_news("Emerging Commercial Real Estate News")
+    save_news_to_file('emerging_news.json', news_data)
+    return news_data

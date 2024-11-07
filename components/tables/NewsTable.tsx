@@ -7,8 +7,8 @@ interface NewsTableProps {
 
 interface NewsItem {
   title: string;
-  text: string; // Webz.io API's 'text' field for article description
-  image: string | null; // Webz.io API's 'image' field
+  text: string; // Article description
+  image: string | null; // Article image
   url: string;
 }
 
@@ -17,6 +17,35 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
   const [currentNewsIndex, setCurrentNewsIndex] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [fadeState, setFadeState] = useState<'fadeIn' | 'fadeOut'>('fadeIn');
+
+  const fetchNews = async () => {
+    try {
+      let apiUrl = '';
+      if (newsType === 'national') {
+        apiUrl = '/api/news/national';
+      } else if (newsType === 'regional') {
+        apiUrl = '/api/news/regional';
+      } else if (newsType === 'emerging') {
+        apiUrl = '/api/news/emerging';
+      }
+
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error('API fetch failed');
+      }
+
+      const data = await response.json();
+      if (!data.articles || data.articles.length === 0) {
+        fetchLocalNews();
+      } else {
+        setNewsItems(data.articles);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error fetching from API, falling back to local JSON:', error);
+      fetchLocalNews();
+    }
+  };
 
   const fetchLocalNews = async () => {
     try {
@@ -31,7 +60,7 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
 
       const response = await fetch(localUrl);
       const data = await response.json();
-      setNewsItems(data.articles || []); // Set the fallback news items
+      setNewsItems(data.articles || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching from local JSON:', error);
@@ -40,22 +69,19 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
   };
 
   useEffect(() => {
-    // Fetch local JSON data when component mounts or when newsType changes
-    fetchLocalNews();
+    fetchNews();
   }, [newsType]);
 
   useEffect(() => {
-    // Automatically cycle through news items with fade effect
     if (newsItems.length > 1) {
       const interval = setInterval(() => {
-        setFadeState('fadeOut'); // Start fade out
+        setFadeState('fadeOut');
         setTimeout(() => {
-          setCurrentNewsIndex((prevIndex) => (prevIndex + 1) % newsItems.length); // Switch news
-          setFadeState('fadeIn'); // Start fade in
-        }, 1000); // Duration of the fade out before switching to the next news item
-      }, 6000); // Total duration for each news item (5 seconds visible, 1 second fade)
-
-      return () => clearInterval(interval); // Clear interval on component unmount
+          setCurrentNewsIndex((prevIndex) => (prevIndex + 1) % newsItems.length);
+          setFadeState('fadeIn');
+        }, 1000);
+      }, 6000);
+      return () => clearInterval(interval);
     }
   }, [newsItems]);
 
@@ -89,41 +115,44 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
       <style jsx>{`
         .news-card {
           background-color: #f9f9f9;
-          padding: 12px;
+          padding: 8px;
           border-radius: 6px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           position: relative;
           overflow: hidden;
-          font-size: 13px;
+          font-size: 12px; /* Smaller font size */
+          width: 100%; /* Full width of container */
+          max-width: 600px; /* Adjust for desktop view */
+          margin: auto;
         }
 
         .news-card h4 {
-          font-size: 14px;
-          margin-bottom: 8px;
+          font-size: 13px;
+          margin-bottom: 6px;
         }
 
         .news-card h5 {
-          font-size: 12px;
-          margin-top: 8px;
-          margin-bottom: 8px;
+          font-size: 11px;
+          margin-top: 4px;
+          margin-bottom: 4px;
           color: #333;
         }
 
         .news-card p {
-          font-size: 11px;
+          font-size: 10px;
           color: #555;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .news-image {
           width: 100%;
-          height: 100px;
+          height: 80px; /* Reduced height */
           object-fit: cover;
           border-radius: 4px;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .news-content {
@@ -140,43 +169,14 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
         }
 
         a {
-          font-size: 11px;
+          font-size: 10px;
           color: #007bff;
         }
 
         @media (max-width: 768px) {
           .news-card {
-            padding: 10px;
-          }
-
-          .news-image {
-            height: 80px;
-          }
-
-          .news-card h4 {
-            font-size: 13px;
-          }
-
-          .news-card h5 {
-            font-size: 11px;
-          }
-
-          .news-card p {
-            font-size: 10px;
-          }
-
-          a {
-            font-size: 10px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .news-card {
-            padding: 8px;
-          }
-
-          .news-image {
-            height: 70px;
+            padding: 6px;
+            max-width: 100%; /* Adjust to container width */
           }
 
           .news-card h4 {
@@ -191,8 +191,38 @@ const NewsTable: React.FC<NewsTableProps> = ({ newsType, address = null }) => {
             font-size: 9px;
           }
 
+          .news-image {
+            height: 70px; /* Smaller for tablets */
+          }
+
           a {
             font-size: 9px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .news-card {
+            padding: 4px;
+          }
+
+          .news-card h4 {
+            font-size: 11px;
+          }
+
+          .news-card h5 {
+            font-size: 9px;
+          }
+
+          .news-card p {
+            font-size: 8px;
+          }
+
+          .news-image {
+            height: 60px; /* Smaller for mobile */
+          }
+
+          a {
+            font-size: 8px;
           }
         }
       `}</style>

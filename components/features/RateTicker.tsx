@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 interface InterestRateItem {
-  source: string;      // Source or name, e.g., "Bankrate"
-  rate: string;        // Interest rate value, e.g., "5.3%"
-  change: string;      // Daily change or trend, e.g., "+0.02%"
-  description?: string; // Additional info about the rate
+  source: string;       // Source or name, e.g., "SOFR"
+  rate: string;         // Current interest rate value, e.g., "4.840%"
+  previousRate?: string; // Previous interest rate value for correlation
 }
 
 const InterestRateTicker: React.FC = () => {
@@ -13,16 +12,11 @@ const InterestRateTicker: React.FC = () => {
 
   // Comprehensive placeholder data for fallback
   const placeholderData: InterestRateItem[] = [
-    { source: 'Bankrate', rate: '5.25%', change: '+0.03%', description: '30-Year Fixed' },
-    { source: 'CBRE', rate: '4.85%', change: '-0.01%', description: 'Prime Rate' },
-    { source: 'JLL', rate: '5.10%', change: '+0.02%', description: 'Commercial Mortgage Rate' },
-    { source: 'Freddie Mac', rate: '4.75%', change: '0.00%', description: 'Multifamily Mortgage' },
-    { source: 'Fannie Mae', rate: '4.95%', change: '-0.05%', description: 'Agency Mortgage' },
-    { source: 'U.S. Bank', rate: '6.25%', change: '+0.10%', description: 'Construction Loan' },
-    { source: 'Wells Fargo', rate: '5.45%', change: '-0.02%', description: 'Bridge Loan' },
-    { source: 'Chase', rate: '5.55%', change: '0.00%', description: 'CRE Permanent Loan' },
-    { source: 'Goldman Sachs', rate: '4.95%', change: '+0.01%', description: 'CMBS Loan Rate' },
-    { source: 'Marcus & Millichap', rate: '5.35%', change: '-0.04%', description: 'Retail Property Loan' }
+    { source: 'SOFR 30 day', rate: '4.840%', previousRate: '4.750%' },
+    { source: 'Prime', rate: '8.000%', previousRate: '7.750%' },
+    { source: 'LIBOR 30 day', rate: '0.000%', previousRate: '0.100%' },
+    { source: '5 yr Treasury', rate: '3.990%', previousRate: '3.800%' },
+    { source: '10 yr Treasury', rate: '3.880%', previousRate: '3.700%' },
   ];
 
   // Fetch interest rate data from the API
@@ -36,9 +30,8 @@ const InterestRateTicker: React.FC = () => {
 
       const rateItems: InterestRateItem[] = data.rates.map((rate: any) => ({
         source: rate.source || "Unknown Source",
-        rate: rate.rate || "N/A",
-        change: rate.change || "N/A",
-        description: rate.description || "Standard Rate"
+        rate: rate.value || "N/A",
+        previousRate: rate.previousRate || "N/A", // Assuming your API returns previous rates
       }));
 
       setRateData(rateItems);
@@ -56,18 +49,49 @@ const InterestRateTicker: React.FC = () => {
 
   return (
     <div className="interest-rate-ticker">
-      <div className="ticker-content">
-        {/* Use either fetched data or placeholders if data is not loaded */}
-        {(isDataLoaded ? rateData : placeholderData).map((rate, index) => (
-          <div className="ticker-item" key={index}>
-            <span className="rate-source">{rate.source}</span>:
-            <span className="rate-value">{rate.rate}</span>
-            <span className={`rate-change ${rate.change.includes('+') ? 'positive' : 'negative'}`}>
-              {rate.change}
-            </span>
-            <span className="rate-description">({rate.description})</span>
-          </div>
-        ))}
+      <div className="ticker-wrapper">
+        <div className="ticker-content">
+          {/* Use either fetched data or placeholders if data is not loaded */}
+          {(isDataLoaded ? rateData : placeholderData).map((rate, index) => {
+            const currentRateValue = parseFloat(rate.rate);
+            const previousRateValue = parseFloat(rate.previousRate || '0');
+
+            let colorClass = 'neutral';
+            if (currentRateValue > previousRateValue) {
+              colorClass = 'positive'; // Current rate is greater than previous rate
+            } else if (currentRateValue < previousRateValue) {
+              colorClass = 'negative'; // Current rate is less than previous rate
+            }
+
+            return (
+              <span className="ticker-item" key={index}>
+                <span className="rate-source">{rate.source}</span>: 
+                <span className={`rate-value ${colorClass}`}>{rate.rate}</span>
+                {index < (isDataLoaded ? rateData.length : placeholderData.length) - 1 && '   '} {/* Add spacing between items */}
+              </span>
+            );
+          })}
+          {/* Duplicate the content for continuous scrolling effect */}
+          {(isDataLoaded ? rateData : placeholderData).map((rate, index) => {
+            const currentRateValue = parseFloat(rate.rate);
+            const previousRateValue = parseFloat(rate.previousRate || '0');
+
+            let colorClass = 'neutral';
+            if (currentRateValue > previousRateValue) {
+              colorClass = 'positive';
+            } else if (currentRateValue < previousRateValue) {
+              colorClass = 'negative';
+            }
+
+            return (
+              <span className="ticker-item" key={`${index}-duplicate`}>
+                <span className="rate-source">{rate.source}</span>: 
+                <span className={`rate-value ${colorClass}`}>{rate.rate}</span>
+                {index < (isDataLoaded ? rateData.length : placeholderData.length) - 1 && '   '}
+              </span>
+            );
+          })}
+        </div>
       </div>
 
       <style jsx>{`
@@ -82,10 +106,15 @@ const InterestRateTicker: React.FC = () => {
           align-items: center;
         }
 
+        .ticker-wrapper {
+          overflow: hidden;
+          width: 100%;
+        }
+
         .ticker-content {
           display: flex;
-          animation: tickerMove 20s linear infinite;
-          min-width: 100%;
+          animation: tickerMove 30s linear infinite; /* Adjust the speed here */
+          width: calc(200%); /* Double the width to accommodate both sets of items */
         }
 
         @keyframes tickerMove {
@@ -93,7 +122,7 @@ const InterestRateTicker: React.FC = () => {
             transform: translateX(0);
           }
           100% {
-            transform: translateX(-50%);
+            transform: translateX(-50%); /* Move by half the width of the duplicated content */
           }
         }
 
@@ -103,28 +132,23 @@ const InterestRateTicker: React.FC = () => {
 
         .rate-source {
           font-weight: bold;
+          color: #FFFFFF; // Keep source color neutral
         }
 
         .rate-value {
           margin-left: 5px;
         }
 
-        .rate-change {
-          margin-left: 5px;
-        }
-
-        .rate-description {
-          font-style: italic;
-          margin-left: 5px;
-          color: #ddd;
-        }
-
         .positive {
-          color: #4CAF50;
+          color: #4CAF50; // Green for positive correlation
         }
 
         .negative {
-          color: #FF5252;
+          color: #FF5252; // Red for negative correlation
+        }
+
+        .neutral {
+          color: #FFFFFF; // White for neutral rates
         }
       `}</style>
     </div>

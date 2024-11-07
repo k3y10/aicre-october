@@ -113,7 +113,7 @@ const HeatMap: React.FC = () => {
         <Map
           {...viewport}
           style={{ width: '100%', height: '600px' }}
-          mapStyle="mapbox://styles/mapbox/dark-v10"
+          mapStyle="mapbox://styles/mapbox/streets-v12"
           mapboxAccessToken={MAPBOX_TOKEN}
           onMove={handleViewportChange}
         >

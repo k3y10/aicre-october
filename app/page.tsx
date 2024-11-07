@@ -433,16 +433,16 @@ const DashboardAiCRE: React.FC = () => {
                 <StockTicker />
                 <PortfolioSummary/>
               </div>
-              <div className='address-table'>
-              <MapBoxSearch onAddAddress={handleAddAddress} />
-              </div>
               <div className="address-table">
-                <div className="main-content">
+                <div className="main-content mt-8">
                   <PropertyTable onPropertyClick={handlePropertySelection} />
                 </div>
               </div>
+              <div className='address-table mt-8'>
+              <MapBoxSearch onAddAddress={handleAddAddress} />
+              </div>
               <div className="news-section">
-                <div className="news-grid">
+                <div className="news-grid mt-8">
                   {/* National News */}
                   <div className="news-card">
                     <NewsTable newsType="national" />

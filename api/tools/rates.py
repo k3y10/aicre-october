@@ -1,5 +1,3 @@
-# rates.py
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -8,8 +6,7 @@ def fetch_interest_rates():
     
     # URLs for scraping real-time interest rate data
     urls = [
-        "https://www.bankrate.com/commercial-real-estate-rates",  # Placeholder URL, replace with actual
-        "https://www.cbre.com/research-and-reports/market-trends"  # Placeholder URL, replace with actual
+        "https://www.commercialloandirect.com/commercial-rates.php",  # Adjust to target rates
     ]
 
     rates = []
@@ -23,19 +20,14 @@ def fetch_interest_rates():
             soup = BeautifulSoup(response.text, 'html.parser')
 
             # Example selectors; adjust these based on the actual HTML structure of each site
-            for item in soup.select(".rate-section .rate-item"):
-                rate_name = item.find("h3", class_="rate-title").text.strip() if item.find("h3", class_="rate-title") else "Unknown Rate"
+            # This will need to be updated according to the actual page structure
+            for item in soup.select(".specific-rate-class"):  # Replace with actual class for each rate
+                rate_name = item.find("span", class_="rate-name").text.strip() if item.find("span", class_="rate-name") else "Unknown Rate"
                 rate_value = item.find("span", class_="rate-value").text.strip() if item.find("span", class_="rate-value") else "N/A"
-                rate_change = item.find("span", class_="rate-change").text.strip() if item.find("span", class_="rate-change") else "0.00%"
-                
-                # Add a descriptive name if the rate source is known
-                source_name = url.split('//')[1].split('/')[0]  # e.g., "bankrate.com" or "cbre.com"
                 
                 rates.append({
-                    "source": source_name,
-                    "name": rate_name,
+                    "source": rate_name,
                     "value": rate_value,
-                    "change": rate_change
                 })
 
             # Stop once data is successfully fetched
@@ -49,9 +41,11 @@ def fetch_interest_rates():
     # Fallback to placeholder data if no rates were found
     if not rates:
         rates = [
-            {"source": "Bankrate (placeholder)", "name": "30-Year Fixed", "value": "5.25%", "change": "+0.02%"},
-            {"source": "CBRE (placeholder)", "name": "Commercial Mortgage", "value": "4.85%", "change": "-0.01%"},
-            {"source": "Freddie Mac (placeholder)", "name": "Multifamily Mortgage", "value": "4.75%", "change": "0.00%"}
+            {"source": "SOFR 30 day", "value": "4.840%"},
+            {"source": "Prime", "value": "8.000%"},
+            {"source": "LIBOR 30 day", "value": "0.000%"},
+            {"source": "5 yr Treasury", "value": "3.990%"},
+            {"source": "10 yr Treasury", "value": "3.880%"},
         ]
 
     return rates

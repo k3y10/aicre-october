@@ -1,51 +1,79 @@
+import os
+import json
 import requests
 from bs4 import BeautifulSoup
+import logging
+
+# Logging configuration
+logging.basicConfig(
+    filename='rates_scrape.log',
+    filemode='a',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+# Define the data directory path for saving JSON files
+DATA_DIR = os.path.join(os.path.dirname(__file__), '../data')
+
+# Ensure the data directory exists
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
+
+def save_rates_to_file(filename, data):
+    """Save rate data to a JSON file in the data directory."""
+    try:
+        file_path = os.path.join(DATA_DIR, filename)
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=4)
+        logging.info(f"Data saved to {filename}")
+        return True
+    except Exception as e:
+        logging.error(f"Error saving rate data to {filename}: {e}")
+        return False
 
 def fetch_interest_rates():
-    """Scrapes commercial real estate interest rates from public sources."""
-    
-    # URLs for scraping real-time interest rate data
-    urls = [
-        "https://www.commercialloandirect.com/commercial-rates.php",  # Adjust to target rates
-    ]
-
+    """Scrapes key market index rates from the target page."""
+    url = "https://www.commercialloandirect.com/commercial-rates.php"
     rates = []
 
-    for url in urls:
-        try:
-            response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-            if response.status_code != 200:
-                continue  # Try next URL if the response fails
+    try:
+        logging.info(f"Starting scrape for: {url}")
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        
+        if response.status_code != 200:
+            logging.error(f"Failed to fetch data from {url}. Status code: {response.status_code}")
+            return {"error": f"Failed to fetch data. Status code: {response.status_code}"}
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
 
-            soup = BeautifulSoup(response.text, 'html.parser')
+        # Find the section with Key Market Index Rates
+        section = soup.find('h2', {'id': 'keymarketinterestrates'})
+        if section:
+            table = section.find_next('table')
+            if table:
+                rows = table.find_all('tr')
+                for row in rows[1:]:  # Skip the header row
+                    columns = row.find_all('td')
+                    if len(columns) >= 2:
+                        index = columns[0].get_text(strip=True)
+                        rate = columns[1].get_text(strip=True)
+                        rates.append({"index": index, "rate": rate})
+        
+        if rates:
+            logging.info(f"Extracted {len(rates)} rates from {url}")
+        else:
+            logging.warning("No rates found.")
 
-            # Example selectors; adjust these based on the actual HTML structure of each site
-            # This will need to be updated according to the actual page structure
-            for item in soup.select(".specific-rate-class"):  # Replace with actual class for each rate
-                rate_name = item.find("span", class_="rate-name").text.strip() if item.find("span", class_="rate-name") else "Unknown Rate"
-                rate_value = item.find("span", class_="rate-value").text.strip() if item.find("span", class_="rate-value") else "N/A"
-                
-                rates.append({
-                    "source": rate_name,
-                    "value": rate_value,
-                })
+    except Exception as e:
+        logging.error(f"Error scraping {url}: {e}")
+        return {"error": str(e)}
 
-            # Stop once data is successfully fetched
-            if rates:
-                break
+    # Save the rates to a JSON file
+    save_rates_to_file('key_market_rates.json', rates)
+    
+    return {"rates": rates}
 
-        except Exception as e:
-            print(f"Error scraping {url}: {e}")
-            continue  # Try the next URL if an error occurs
-
-    # Fallback to placeholder data if no rates were found
-    if not rates:
-        rates = [
-            {"source": "SOFR 30 day", "value": "4.840%"},
-            {"source": "Prime", "value": "8.000%"},
-            {"source": "LIBOR 30 day", "value": "0.000%"},
-            {"source": "5 yr Treasury", "value": "3.990%"},
-            {"source": "10 yr Treasury", "value": "3.880%"},
-        ]
-
-    return rates
+# Uncomment to test standalone
+# if __name__ == "__main__":
+#     rates = fetch_interest_rates()
+#     print(json.dumps(rates, indent=4))

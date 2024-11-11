@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Map, { Marker, Popup } from 'react-map-gl';
+import Map, { Marker, Popup, ViewState } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface SearchResult {
@@ -15,14 +15,21 @@ interface MapBoxSearchProps {
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
+interface ViewportState extends ViewState {
+  transitionDuration?: number;
+}
+
 const MapBoxSearch: React.FC<MapBoxSearchProps> = ({ onAddAddress }) => {
   const [query, setQuery] = useState<string>('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
-  const [viewport, setViewport] = useState({
-    latitude: 37.7749, // Default to San Francisco
-    longitude: -122.4194,
-    zoom: 10,
+  const [viewport, setViewport] = useState<ViewportState>({
+    latitude: 39.99244320496018, // Default to the USA
+    longitude: -101.80767764879192,
+    zoom: 2,
+    bearing: 0,
+    pitch: 0,
+    padding: { top: 0, bottom: 0, left: 0, right: 0 }, // Ensure padding is included
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,7 +38,7 @@ const MapBoxSearch: React.FC<MapBoxSearchProps> = ({ onAddAddress }) => {
       if (query.length >= 3) {
         fetchSearchResults();
       } else {
-        setResults([]); // Clear results if query is too short
+        setResults([]);
       }
     }, 300);
     return () => clearTimeout(timeoutId);
@@ -41,10 +48,21 @@ const MapBoxSearch: React.FC<MapBoxSearchProps> = ({ onAddAddress }) => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://api.mapbox.com/searchbox/v1/suggest?q=${encodeURIComponent(query)}&access_token=${MAPBOX_TOKEN}&limit=5`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}`
       );
+      if (!response.ok) {
+        throw new Error('Failed to fetch data from Mapbox API');
+      }
       const data = await response.json();
-      setResults(data.suggestions || []);
+
+      const mappedResults = data.features.map((feature: any) => ({
+        id: feature.id,
+        name: feature.text,
+        center: feature.center,
+        place_name: feature.place_name,
+      }));
+
+      setResults(mappedResults);
     } catch (error) {
       console.error('Error fetching search results:', error);
     }
@@ -58,16 +76,20 @@ const MapBoxSearch: React.FC<MapBoxSearchProps> = ({ onAddAddress }) => {
   const handleResultClick = (result: SearchResult) => {
     setSelectedResult(result);
     setViewport({
+      ...viewport,
       latitude: result.center[1],
       longitude: result.center[0],
       zoom: 14,
+      transitionDuration: 1000,
     });
+    setResults([]); // Clear results after selection
+    setQuery(result.place_name); // Update input field to show the selected place name
   };
 
   const handleAddAddress = () => {
     if (selectedResult) {
       onAddAddress(selectedResult.place_name);
-      setSelectedResult(null); // Clear the selected result after adding
+      setSelectedResult(null);
     }
   };
 
@@ -82,24 +104,36 @@ const MapBoxSearch: React.FC<MapBoxSearchProps> = ({ onAddAddress }) => {
       />
       {isLoading && <div className="loading-spinner">Loading...</div>}
 
+      {results.length > 0 && (
+        <div className="results-dropdown">
+          {results.map((result) => (
+            <div
+              key={result.id}
+              className="result-item"
+              onClick={() => handleResultClick(result)}
+            >
+              {result.place_name}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="map-container">
         <Map
           {...viewport}
-          style={{ width: '100%', height: '300px' }}
+          style={{ width: '100%', height: '600px' }}
           mapStyle="mapbox://styles/mapbox/streets-v12"
           mapboxAccessToken={MAPBOX_TOKEN}
           onMove={(event) => setViewport(event.viewState)}
         >
-          {results.map((result) => (
+          {selectedResult && (
             <Marker
-              key={result.id}
-              latitude={result.center[1]}
-              longitude={result.center[0]}
-              onClick={() => handleResultClick(result)}
+              latitude={selectedResult.center[1]}
+              longitude={selectedResult.center[0]}
             >
               <div className="marker">📍</div>
             </Marker>
-          ))}
+          )}
 
           {selectedResult && (
             <Popup
@@ -121,40 +155,61 @@ const MapBoxSearch: React.FC<MapBoxSearchProps> = ({ onAddAddress }) => {
 
       <style jsx>{`
         .mapbox-search {
-          width: 100%;
-          max-width: 100%;
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          margin-bottom: 16px;
+          gap: 15px;
+          margin-bottom: 20px;
         }
 
         .search-input {
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          font-size: 16px;
+          padding: 12px;
+          border: 1px solid #dfe3e8;
+          border-radius: 8px;
+          font-size: 15px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+          transition: border 0.3s, box-shadow 0.3s;
+        }
+
+        .search-input:focus {
+          border-color: #4a90e2;
+          box-shadow: 0 0 6px rgba(74, 144, 226, 0.5);
+          outline: none;
         }
 
         .loading-spinner {
           text-align: center;
           font-size: 14px;
-          color: #666;
+          color: #888;
+        }
+
+        .results-dropdown {
+          background: white;
+          border: 1px solid #dfe3e8;
+          border-radius: 8px;
+          max-height: 200px;
+          overflow-y: auto;
+        }
+
+        .result-item {
+          padding: 10px;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .result-item:hover {
+          background-color: #f0f0f0;
         }
 
         .map-container {
-          width: 100%;
-          height: 100%;
-          min-height: 300px;
-          max-height: 600px;
-          border-radius: 8px;
+          border-radius: 12px;
           overflow: hidden;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         .marker {
-          font-size: 24px;
+          font-size: 20px;
           cursor: pointer;
+          transform: translate(-50%, -50%);
         }
 
         .popup-content {
@@ -162,32 +217,17 @@ const MapBoxSearch: React.FC<MapBoxSearchProps> = ({ onAddAddress }) => {
         }
 
         .popup-content button {
-          background-color: #007bff;
-          color: white;
-          padding: 8px 12px;
+          background-color: #4a90e2;
+          color: #fff;
+          padding: 8px 14px;
           border: none;
-          border-radius: 4px;
+          border-radius: 6px;
           cursor: pointer;
+          transition: background-color 0.3s;
         }
 
         .popup-content button:hover {
-          background-color: #0056b3;
-        }
-
-        @media (max-width: 768px) {
-          .map-container {
-            height: 250px;
-          }
-
-          .search-input {
-            font-size: 14px;
-            padding: 8px;
-          }
-
-          .popup-content button {
-            padding: 6px 10px;
-            font-size: 12px;
-          }
+          background-color: #357ab9;
         }
       `}</style>
     </div>

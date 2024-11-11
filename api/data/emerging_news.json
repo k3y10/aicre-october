@@ -1,3 +1,25 @@
 {
-    "articles": []
+    "articles": [
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://lh3.googleusercontent.com/V0jSMXwRUvDPH1N09kA8b6yj8IQFLQRbG_93M-0txO3JjaR9Zgsiuy37kgYT4CrK37YQqjI3y3s=s0-h12-rw",
+            "url": "https://news.google.com/read/CBMizgFBVV95cUxNZm9FQ1ZXWGxzLVRVY3lyOFVxMmI4NHJCV2NsRFJCa2p0SGxGSDltbTZMRzd4Wk95ZkVaRjJyUkJWejJYb1V0UUZlMVNVZTZBVmRSdEpiSmFGMDQzRjA3YnZtVDFwMnZ6N2loVzNmWXZjaDg0aklvc1AzY3FOVUs5a3VSVGhPMjYzeHYtYTBVYVV6Zm44cWEyUG9UME1zTDRqWGVLQXpXRGx6LVlkWlFDVnR4SUd0cHQ0Yzg1WVFDb1VyVHBhX1FYTlN1RkxZQQ?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        },
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://lh3.googleusercontent.com/-AuHkF7hb4isLMc4bLhcnlm659w_XJ47Fpzr3Zllk7uXpuSuSOuj7f89tXfFkYLzol580OROWQ=s0-h12-rw",
+            "url": "https://news.google.com/read/CBMirAFBVV95cUxQTjJnb0JZbENXOTJaSkdxZHl4Z1hDMzU1RkhySjFOVFZPbWFTSk9BZ2RPRElOY2N0MExzaUhfU3FObWFCOWR3SjNSQlVpZ2YyNXVJUTdOc3RPM3N3WVQwN2FtMWZNUUw2b3dkSk85dS1pNmxuRnZGOTdBRTMxcG50clFxX0M0QWlPZUdmYVBfaXlqNHplVTMwUTRQakpLU2RIWkxWbkVtT0I1Vkox?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        },
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://encrypted-tbn2.gstatic.com/faviconV2?url=https://www2.deloitte.com&client=NEWS_360&size=96&type=FAVICON&fallback_opts=TYPE,SIZE,URL",
+            "url": "https://news.google.com/read/CBMipwFBVV95cUxObTI4bkxiREpIcnd2QnVBOUJWcHVqVmprczR4Vl9pMlMzX2hLOVgyTGptbGNnTWR2SGE0M09teDdNbDJvcXlHbjdJaTBJMExpNHlMamVFLVoyOU9LakhLTXM1S1I2WEdZbHhDN1JqWEtvMEltUXpqV21mLXlCeVlzYndfS2xYRlpIandMY2kxVUM1bG5oRTM3Vk5MUGVnc3F4TGhjbUdlcw?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        }
+    ]
 }

@@ -7,8 +7,9 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install the dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies and SpaCy model
+RUN pip install --no-cache-dir -r requirements.txt && \
+    python -m spacy download en_core_web_sm
 
 # Make port 5328 available to the world outside this container
 EXPOSE 5328

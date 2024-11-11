@@ -7,7 +7,7 @@ interface Tenant {
   notes: string;
 }
 
-interface PropertyPerformance {
+interface Property {
   propertyName: string;
   operatingPerformance: number;
   operatingExpenses: number;
@@ -17,11 +17,11 @@ interface PropertyPerformance {
   tenants: Tenant[];
 }
 
-interface AddressTable2Props {
-  properties: PropertyPerformance[];
+interface TenantTableProps {
+  properties: Property[];
 }
 
-const AddressTable2: React.FC<AddressTable2Props> = ({ properties }) => {
+const TenantTable: React.FC<TenantTableProps> = ({ properties }) => {
   return (
     <div className="address-table">
       {properties.length === 0 ? (
@@ -41,7 +41,7 @@ const AddressTable2: React.FC<AddressTable2Props> = ({ properties }) => {
               </tr>
             </thead>
             <tbody>
-              {properties.map((property, propertyIndex) => (
+              {properties.map((property) => (
                 <tr key={property.propertyName}>
                   <td>{property.propertyName}</td>
                   <td>${property.operatingPerformance.toLocaleString()}</td>
@@ -50,24 +50,28 @@ const AddressTable2: React.FC<AddressTable2Props> = ({ properties }) => {
                   <td>${property.cashBalance.toLocaleString()}</td>
                   <td>${property.accountsReceivable.toLocaleString()}</td>
                   <td>
-                    <table className="tenant-table">
-                      <thead>
-                        <tr>
-                          <th>Tenant</th>
-                          <th>Term End</th>
-                          <th>Notes</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {property.tenants.map((tenant) => (
-                          <tr key={tenant.id}>
-                            <td>{tenant.propertyName}</td>
-                            <td>{tenant.termEnd}</td>
-                            <td>{tenant.notes}</td>
+                    {property.tenants.length > 0 ? (
+                      <table className="tenant-table">
+                        <thead>
+                          <tr>
+                            <th>Tenant</th>
+                            <th>Term End</th>
+                            <th>Notes</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {property.tenants.map((tenant) => (
+                            <tr key={tenant.id}>
+                              <td>{tenant.propertyName}</td>
+                              <td>{tenant.termEnd}</td>
+                              <td>{tenant.notes}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p>No tenants available</p>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -96,7 +100,7 @@ const AddressTable2: React.FC<AddressTable2Props> = ({ properties }) => {
           text-align: left;
         }
         th {
-          background-color: #ffffff;
+          background-color: #f3f3f3;
           font-weight: bold;
         }
         .tenant-table {
@@ -110,9 +114,13 @@ const AddressTable2: React.FC<AddressTable2Props> = ({ properties }) => {
           font-size: 12px;
           text-align: left;
         }
+        .no-address {
+          text-align: center;
+          margin: 20px;
+        }
       `}</style>
     </div>
   );
 };
 
-export default AddressTable2;
+export default TenantTable;

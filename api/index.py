@@ -22,6 +22,7 @@ from api.tools.census import get_census_data
 from api.tools.extract_property_data import extract_data_from_pdf
 from api.tools.news import get_national_news, get_regional_news, get_emerging_news
 from api.tools.zillow import scrape_zillow_data
+from api.tools.rates import fetch_interest_rates  # Import the rates function
 
 
 # Initialize Flask app
@@ -69,6 +70,17 @@ def analyze_document_with_gpt4(document_text):
         return response['choices'][0]['message']['content']
     except Exception as e:
         return str(e)
+
+@app.route('/api/rates', methods=['GET'])
+def get_interest_rates():
+    try:
+        rates_data = fetch_interest_rates()
+        if "error" in rates_data:
+            return jsonify(rates_data), 500
+        return jsonify(rates_data), 200
+    except Exception as e:
+        logging.error(f"General error in rates endpoint: {e}")
+        return jsonify({'error': 'Failed to fetch rates', 'message': str(e)}), 500
 
 # Consolidated route for uploading and processing documents with GPT-4 and extracting property data
 @app.route('/api/upload', methods=['POST'])

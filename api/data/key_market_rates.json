@@ -1,0 +1,98 @@
+[
+    {
+        "index": "Index",
+        "rate": "Rates"
+    },
+    {
+        "index": "SOFR 30 Day",
+        "rate": "4.840%"
+    },
+    {
+        "index": "SOFR 90 Day",
+        "rate": "5.090%"
+    },
+    {
+        "index": "SOFR 180 Day",
+        "rate": "5.260%"
+    },
+    {
+        "index": "Prime",
+        "rate": "8.000%"
+    },
+    {
+        "index": "30 Day Libor",
+        "rate": "0.000%"
+    },
+    {
+        "index": "90 Day Libor",
+        "rate": "0.000%"
+    },
+    {
+        "index": "6 Month Libor",
+        "rate": "0.000%"
+    },
+    {
+        "index": "1 Year Swap",
+        "rate": "5.654%"
+    },
+    {
+        "index": "2 Year Swap",
+        "rate": "5.109%"
+    },
+    {
+        "index": "3 Year Swap",
+        "rate": "4.684%"
+    },
+    {
+        "index": "5 Year Swap",
+        "rate": "4.226%"
+    },
+    {
+        "index": "7 Year Swap",
+        "rate": "4.015%"
+    },
+    {
+        "index": "10 Year Swap",
+        "rate": "3.870%"
+    },
+    {
+        "index": "30 Year Swap",
+        "rate": "3.485%"
+    },
+    {
+        "index": "5 Year Treasury",
+        "rate": "3.990%"
+    },
+    {
+        "index": "7 Year Treasury",
+        "rate": "3.960%"
+    },
+    {
+        "index": "10 Year Treasury",
+        "rate": "3.880%"
+    },
+    {
+        "index": "10 Year SBA 504 Purchase",
+        "rate": "6.460%"
+    },
+    {
+        "index": "20 Year SBA 504 Purchase",
+        "rate": "6.350%"
+    },
+    {
+        "index": "25 Year SBA 504 Purchase",
+        "rate": "6.280%"
+    },
+    {
+        "index": "10 Year SBA 504 Refinance",
+        "rate": "6.490%"
+    },
+    {
+        "index": "20 Year SBA 504 Refinance",
+        "rate": "6.380%"
+    },
+    {
+        "index": "25 Year SBA 504 Refinance",
+        "rate": "6.310%"
+    }
+]

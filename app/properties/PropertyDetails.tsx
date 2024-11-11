@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface Property {
   id: string;
@@ -24,89 +24,100 @@ interface Tenant {
 }
 
 interface PropertyDetailsProps {
-  selectedPropertyId: string;
+  property: Property; // Ensure this matches the type used in DashboardV2
 }
 
-const PropertyDetails: React.FC<PropertyDetailsProps> = ({ selectedPropertyId }) => {
-  const [property, setProperty] = useState<Property | null>(null);
-
-  useEffect(() => {
-    const fetchPropertyData = async () => {
-      try {
-        const response = await fetch(`/property_types/${selectedPropertyId}.json`);
-        if (!response.ok) throw new Error(`Error ${response.status}: Property data not found`);
-        const data = await response.json();
-        setProperty(data);
-      } catch (error) {
-        console.error('Error loading property data:', error);
-      }
-    };
-
-    fetchPropertyData();
-  }, [selectedPropertyId]);
-
+const PropertyDetails: React.FC<PropertyDetailsProps> = ({ property }) => {
   if (!property) return <div>Loading property details...</div>;
 
   const renderNoteIcon = (note: string) => {
-    if (note.toLowerCase().includes("traffic")) return <span className="note-icon traffic">⬆</span>;
-    if (note.toLowerCase().includes("ar challenges")) return <span className="note-icon ar">⬇</span>;
-    if (note.toLowerCase().includes("180 days notice")) return <span className="note-icon notice">★</span>;
-    if (note.toLowerCase().includes("opportunity")) return <span className="note-icon opportunity">⭐</span>;
+    if (note.toLowerCase().includes('traffic')) return <span className="note-icon traffic">⬆</span>;
+    if (note.toLowerCase().includes('ar challenges')) return <span className="note-icon ar">⬇</span>;
+    if (note.toLowerCase().includes('180 days notice')) return <span className="note-icon notice">★</span>;
+    if (note.toLowerCase().includes('opportunity')) return <span className="note-icon opportunity">⭐</span>;
     return null;
   };
 
   return (
-    <div className="property-detail-page">
-      <div className="header">
-        <div className="map-image">Map Image</div>
-        <div className="property-info">
-          <h2>{property.propertyName}</h2>
-          <p>{property.address}</p>
+    <div className="responsive-container">
+      <div className="responsive-column">
+        <div className="property-detail-page">
+          <div className="header">
+            <div className="map-image">Map Image</div>
+            <div className="property-info">
+              <h2>{property.propertyName}</h2>
+              <p>{property.address}</p>
+            </div>
+          </div>
+
+          <h3>End of Last Month</h3>
+          <div className="responsive-column">
+          <div className="monthly-summary">
+            <div>NOI YTD: ${property.noiYTD?.toLocaleString() || '0'}</div>
+            <div>Cash YTD: ${property.cashYTD?.toLocaleString() || '0'}</div>
+            <div>Net Cash Flow This Month: ${property.netCashFlowThisMonth?.toLocaleString() || '0'}</div>
+            <div>Vacancy: {property.vacancy || 'N/A'}%</div>
+          </div>
+          </div>
+
+          <h3>Tenants</h3>
+          <table className="tenants-table">
+            <thead>
+              <tr>
+                <th>Tenant</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {property.tenants.map((tenant) => (
+                <tr key={tenant.id}>
+                  <td>{tenant.propertyName}</td>
+                  <td>
+                    {renderNoteIcon(tenant.notes || '')} {tenant.notes || 'No notes available'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3>Operating Reports</h3>
+          <div className="reports">
+            <div className="report-icon">PDF - Oct 2024</div>
+            <div className="report-icon">PDF - Q3 2024 Summary</div>
+            <div className="report-icon">PDF - Sep 2024</div>
+            <button className="upload-button">Upload Report</button>
+          </div>
         </div>
       </div>
 
-      <h3>End of Last Month</h3>
-      <div className="monthly-summary">
-        <div>NOI YTD: ${property.noiYTD?.toLocaleString() || '0'}</div>
-        <div>Cash YTD: ${property.cashYTD?.toLocaleString() || '0'}</div>
-        <div>Net Cash Flow This Month: ${property.netCashFlowThisMonth?.toLocaleString() || '0'}</div>
-        <div>Vacancy: {property.vacancy || 'N/A'}%</div>
-      </div>
-
-      <h3>Tenants</h3>
-      <table className="tenants-table">
-        <thead>
-          <tr>
-            <th>Tenant</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {property.tenants.map((tenant) => (
-            <tr key={tenant.id}>
-              <td>{tenant.propertyName}</td>
-              <td>
-                {renderNoteIcon(tenant.notes || '')} {tenant.notes || 'No notes available'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h3>Operating Reports</h3>
-      <div className="reports">
-        <div className="report-icon">PDF - Oct 2024</div>
-        <div className="report-icon">PDF - Q3 2024 Summary</div>
-        <div className="report-icon">PDF - Sep 2024</div>
-        <button className="upload-button">Upload Report</button>
-      </div>
-
       <style jsx>{`
+
+       .responsive-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 20px;
+        }
+
+         .responsive-column {
+          background-color: #ffffff;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .full-width-container {
+          margin-top: 20px;
+          background-color: #ffffff;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
         .property-detail-page {
           padding: 20px;
           background-color: #fff;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .header {

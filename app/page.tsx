@@ -1,75 +1,32 @@
-'use client';
+'use client'
+
 import React, { useState, useEffect } from 'react';
 import {
+  HomeIcon,
   BuildingIcon,
-  ChecklistIcon,
-  FileUpload,
-  BarChartIcon,
+  Tools,
   ContractIcon,
-  SavingsIcon,
   Bell,
-  PlusIcon,
-  TimesIcon,
-  BarsIcon,
   CogIcon,
-  UserGearIcon,
   SignOutIcon,
+  BarsIcon,
+  Map,
   ChevronDownIcon,
   ChevronUpIcon,
-  Tools,
-  Info,
-  House,
-  Shop,
-  Mountain,
-  Map,
-  HomeIcon,
-  Gauge, 
-  Table
 } from '@/components/icons';
-import PropertyDetails from './properties/PropertyDetails';
-import DataRoom from './data/data-room';
-import NewsTable from '@/components/tables/NewsTable';
-import Image from 'next/image';
-import Profile from '@/components/profile/Profile';
+import InterestRateTicker from '@/components/features/RateTicker';
 import PortfolioSummary from '@/components/features/PortfolioSummary';
+import DataRoom from './data/data-room';
 import PropertyTable from '@/components/tables/PropertyTable';
-import PropertyForm from '@/components/tools/PropertyForm';
-import DataVisual from '@/components/tools/DataVisual';
-import CapTable from './planning/CapTable';
-import Forecaster from './planning/Forecaster';
-import SREOTable from './planning/SREOTable';
-import StressTester from './planning/StressTester';
-import StockTicker from '@/components/features/RateTicker';
-import Scenario from './planning/Scenario';
+import MapBoxSearch from '@/components/mapping/MapBoxSearch';
+import NewsTable from '@/components/tables/NewsTable';
+import PropertyDetails from './properties/PropertyDetails';
 import HeatMap from './mapping/HeatMap';
-import IdealMap from './mapping/IdealMap';
-import AicreReport from './reporting/AicreReport';
-import MapBoxSearch from '@/components/mapping/MapBoxSearch'; // Adjust the import path as necessary
 
-
-type Tenant = {
+interface Property {
   id: string;
   propertyName: string;
-  type: string;
   address: string;
-  noi: number;
-  value: number;
-  leverage: number;
-  yieldRate: number;
-  dscr: number;
-  opportunity: string;
-  image: string;
-  latitude: number;
-  longitude: number;
-};
-
-type Property = {
-  id: string;
-  propertyName: string;
-  city: string;
-  type: string;
-  address: string;
-  noi: number;
   noiYTD: number;
   cashYTD: number;
   netCashFlowThisMonth: number;
@@ -79,799 +36,504 @@ type Property = {
   yieldRate: number;
   dscr: number;
   opportunity: string;
-  tenants?: Tenant[]; // Optional array for tenants
-};
+  tenants: Tenant[];
+}
 
+interface Tenant {
+  id: string;
+  propertyName: string;
+  termEnd?: string;
+  notes?: string;
+}
 
-
-// Tools for the dashboard with updated icons
-const tools = [
-  { id: 1, name: 'PropertyDetails', label: 'Property 1', icon: BarChartIcon, active: true },
-  { id: 2, name: 'CommercialDetails', label: 'Property 2', icon: BarChartIcon, active: true },
-  { id: 3, name: 'RecreationalDetails', label: 'Property 3', icon: BarChartIcon, active: true },
-  { id: 4, name: 'ResidentialDetails', label: 'Property 4', icon: BarChartIcon, active: true },
-  { id: 5, name: 'RetailDetails', label: 'Property 5', icon: BarChartIcon, active: true },
-  { id: 6, name: 'Forecaster', label: 'Forecaster', icon: BarChartIcon, active: true },
-  { id: 7, name: 'CapTable', label: 'Cap Table', icon: BarChartIcon, active: true },
-  { id: 8, name: 'SREOTable', label: 'SREO Table', icon: BarChartIcon, active: true },
-  { id: 9, name: 'StressTester', label: 'Stress Tester', icon: BarChartIcon, active: true },
-  { id: 10, name: 'Scenario', label: 'Scenario', icon: BarChartIcon, active: true },
-  { id: 11, name: 'DataRoom', label: 'Data Room', icon: FileUpload, active: true },
-  { id: 12, name: 'HeatMap', label: 'Heat Map', icon: FileUpload, active: true },
-  { id: 13, name: 'IdealMap', label: 'Ideal Map', icon: FileUpload, active: true },
-  { id: 14, name: 'AicreReport', label: 'Example', icon: FileUpload, active: true },
-
-];
-
-// Categories for filtering tools
-const categories = {
-  ALL: tools.map((tool) => tool.name),
-  RESIDENTIAL: ['PropertyDetails'],
-  COMMERCIAL: ['DataRoom'],
-  FINANCE: ['NewsTable'],
-};
-
-const DashboardAiCRE: React.FC = () => {
-  const [activeTool, setActiveTool] = useState<string | null>(null);
-  const [filteredTools, setFilteredTools] = useState<string[]>(categories.ALL);
-  const [activeCategory, setActiveCategory] = useState<string>('ALL');
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [isSubMenuOpen1, setIsSubMenuOpen1] = useState<boolean>(false); 
-  const [isSubMenuOpen2, setIsSubMenuOpen2] = useState<boolean>(false);
-  const [isSubMenuOpen3, setIsSubMenuOpen3] = useState<boolean>(false); 
-  const [isSubMenuOpen4, setIsSubMenuOpen4] = useState<boolean>(false); 
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isFormVisible, setIsFormVisible] = useState(false); // State for toggling form visibility
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [propertyType, setPropertyType] = useState<string>('all'); // Default to 'all'
+const DashboardV2: React.FC = () => {
+  const [activeSection, setActiveSection] = useState<string>('overview');
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+  const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [addresses, setAddresses] = useState<string[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
-  // Toggle form visibility
-  const toggleForm = () => {
-    setIsFormOpen((prev) => !prev);
-  };
+  useEffect(() => {
+    const initialSidebarState = typeof window !== 'undefined' && window.innerWidth >= 1024;
+    setIsSidebarOpen(initialSidebarState);
 
-  const fetchProperties = async () => {
-    try {
-      // Fetch JSON data
-      const brickyardData = await fetch('/property_types/brickyardplaza.json').then((res) => res.json());
-      const portolaData = await fetch('/property_types/portolaplaza.json').then((res) => res.json());
-  
-      // Combine properties with all required fields from the Property interface
-      const combinedProperties = [
-        brickyardData,
-        portolaData
-      ].map((property) => ({
-        id: property.id,
-        propertyName: property.propertyName,
-        city: property.city,
-        noiYTD: property.noiYTD,
-        cashYTD: property.cashYTD,
-        netCashFlowThisMonth: property.netCashFlowThisMonth,
-        vacancy: property.vacancy,
-        type: property.type || "Unknown", // Default values if the fields aren't available
-        address: property.address || "N/A",
-        noi: property.noi || 0,
-        value: property.value || 0,
-        leverage: property.leverage || 0,
-        yieldRate: property.yieldRate || 0,
-        dscr: property.dscr || 0,
-        opportunity: property.opportunity || "Unknown",
-        image: property.image || "",
-        latitude: property.latitude || 0,
-        longitude: property.longitude || 0,
-        tenants: property.tenants || [], // Optional tenants array
-      }));
-  
-      setProperties(combinedProperties as Property[]);
-    } catch (error) {
-      console.error("Error loading properties:", error);
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Load property data from JSON files in the public directory
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        const propertyPaths = [
+          '/property_types/brickyardplaza.json',
+          '/property_types/portolaplaza.json',
+        ];
+
+        const propertyPromises = propertyPaths.map((path) =>
+          fetch(path).then((response) => response.json())
+        );
+
+        const propertiesData = await Promise.all(propertyPromises);
+        setProperties(propertiesData);
+      } catch (error) {
+        console.error('Failed to load property data:', error);
+      }
+    };
+
+    loadProperties();
+  }, []);
+
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
     }
-  };
-
-  const handlePropertyClick = (propertyId: string) => {
-    // Store the selected property ID in the state or trigger another action
-    setSelectedPropertyId(propertyId);
-
-    // Show a modal, set additional details, or any other custom action
-    console.log(`Navigate to property page for ${propertyId}`);
-  };
-
-  const handleBackToList = () => {
-    setSelectedPropertyId(null); // Reset selected property to go back to the table view
-  };
-
-
-  // Set selected property ID and activate PropertyDetails view
-  const handlePropertySelection = (propertyId: string) => {
-    setSelectedPropertyId(propertyId);
-    setActiveTool('PropertyDetails');
-  };
-
-   // Callback function to handle added addresses from MapBoxSearch
-   const handleAddAddress = (address: string) => {
-    setAddresses((prevAddresses) => [...prevAddresses, address]);
-  };
-
-  const handleViewProperty = (propertyId: string) => {
-    // Implement the logic for viewing a property
-    console.log(`Viewing property with ID: ${propertyId}`);
-  };
-  
-  const handleAddNewProperty = (newProperty: Property) => {
-    setProperties((prevProperties) => [...prevProperties, newProperty]);
   };
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+    setIsSidebarOpen((prev) => !prev);
   };
 
-  // Toggling specific submenus
-  const toggleSubMenu1 = () => {
-    setIsSubMenuOpen1(!isSubMenuOpen1);
+  // Implementing the missing functions
+  const handleSubMenuToggle = (menu: string) => {
+    setOpenSubMenu((prev) => (prev === menu ? null : menu));
   };
 
-  const toggleSubMenu2 = () => {
-    setIsSubMenuOpen2(!isSubMenuOpen2);
-  };
-
-  const toggleSubMenu3 = () => {
-    setIsSubMenuOpen3(!isSubMenuOpen3);
-  };
-
-  const toggleSubMenu4 = () => {
-    setIsSubMenuOpen4(!isSubMenuOpen4);
-  };
-
-  const toggleSettings = () => {
-    setIsSettingsOpen(!isSettingsOpen); // Toggle the profile settings
-  };
-
-  const handleCloseProfile = () => {
-    setIsSettingsOpen(false); // Close the profile modal
-  };
-
-  const handleToolClick = (toolName: string) => {
-    setActiveTool(toolName);
-    if (window.innerWidth < 768) setIsSidebarOpen(false); // Close sidebar on mobile
-  };
-
-  // Function to toggle the visibility of the form
-  const toggleFormVisibility = () => {
-    setIsFormVisible((prevState) => !prevState);
-  };
-
-   // Add the "Property Dash" button to the sidebar
-   const handleGoToHome = () => {
-    setActiveTool(null); // Reset active tool, so the home content is displayed
-  };
-
-  const calculateSummary = () => {
-    const totalValue = properties.reduce((sum, property) => sum + property.value, 0);
-    const totalNOI = properties.reduce((sum, property) => sum + property.noi, 0);
-    const totalCashYTD = properties.reduce((sum, property) => sum + property.cashYTD, 0);
-    const totalEquity = totalValue - (totalValue * 0.65);
-
-    return { totalValue, totalNOI, totalCashYTD, totalEquity };
-  };
-
-  const { totalValue, totalNOI, totalCashYTD, totalEquity } = calculateSummary();
-  
-   // Renders the correct tool based on activeTool
-   const renderActiveTool = () => {
-    if (activeTool === 'PropertyDetails' && selectedPropertyId) {
-      return <PropertyDetails selectedPropertyId={selectedPropertyId} />;
-    }
-    switch (activeTool) {
-      case 'CapTable':
-        return <CapTable />;
-      case 'Forecaster':
-        return <Forecaster />;
-      case 'SREOTable':
-        return <SREOTable />;
-      case 'StressTester':
-        return <StressTester />;
-      case 'Scenario':
-        return <Scenario />;
-      case 'HeatMap':
-        return <HeatMap />;
-      case 'IdealMap':
-        return <IdealMap />;
-      case 'DataRoom':
-        return <DataRoom />;
-      case 'NewsTable':
-        return <NewsTable newsType="regional" />;
-      case 'AicreReport':
-        return <AicreReport />;
-      default:
-        return renderToolGrid();
+  const handlePropertyClick = (propertyId: string) => {
+    const property = properties.find((p) => p.id === propertyId);
+    if (property) {
+      setSelectedProperty(property);
+      setActiveSection('property-details');
     }
   };
 
-  const renderToolGrid = () => (
-    <div className="grid-container">
-      {filteredTools.map((toolName) => {
-        const tool = tools.find((t) => t.name === toolName);
-        if (!tool) return null;
+  const handleAddAddress = (address: string) => {
+    setSelectedAddress(address);
+    console.log(`Address added: ${address}`);
+  };
 
-        return (
-          <div
-            key={tool.id}
-            className={`grid-item ${tool.active ? '' : 'grayed-out'}`}
-            onClick={() => tool.active && handleToolClick(tool.name)}
-          >
-            <div className="icon-placeholder">
-              <tool.icon />
-            </div>
-            <p>{tool.label}</p>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  useEffect(() => {
-    // Simulate fetching user ID from an API or auth context
-    const fetchUserId = async () => {
-      const fetchedUserId = '12345'; // Assume this comes from your API or auth service
-      setUserId(fetchedUserId);
-    };
-
-    fetchUserId();
-  }, []);
-
-  if (!userId) {
-    return <div>Loading user information...</div>;
-  }
+  const handleBackToOverview = () => {
+    setSelectedProperty(null);
+    setActiveSection('overview');
+  };
 
   return (
-    <div className="dashboard-container">
-      <button className="hamburger-button" onClick={toggleSidebar}>
-        <BarsIcon />
-      </button>
-
-      {/* Sidebar with profile and navigation */}
-      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="logo">
-           {/* Render Profile component conditionally */}
-           <Profile />
-          <div className="profile-container">
-            {/* Avatar image (purely visual, no onClick action here) */}
-            <Image src="/aicre-circle.png" alt="avatar" width={100} height={100} className="profile-image" />
-          </div>
+    <div className="dashboard-layout">
+      <header className="header">
+        <div className="header-content">
+          <button className="hamburger-button" onClick={toggleSidebar}>
+            <BarsIcon />
+          </button>
+          <h2 className="logo-text">AiCRE Dashboard</h2>
         </div>
-        <nav className="nav-menu">  
+      </header>
+
+      {/* Sidebar */}
+      <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+        <div className="logo-container">
+          <h2 className="logo-text">AiCRE Dashboard</h2>
+        </div>
+        <nav className="nav-menu">
           <ul>
-            <li className="property-dash-button" onClick={handleGoToHome}>
-              Portfoilio (home) 
+            <li
+              className={activeSection === 'overview' ? 'active' : ''}
+              onClick={() => handleSectionChange('overview')}
+            >
+              <HomeIcon /> Overview
             </li>
-          </ul>
-          <ul className="sub-menu-toggle" onClick={toggleSubMenu1}>
-            <li>
-              <HomeIcon /> Property Details {isSubMenuOpen1 ? <ChevronUpIcon /> : <ChevronDownIcon />}
+            <li
+              className={`has-sub-menu ${openSubMenu === 'properties' ? 'open' : ''}`}
+              onClick={() => handleSubMenuToggle('properties')}
+            >
+              <BuildingIcon /> Properties
+              {openSubMenu === 'properties' ? (
+                <ChevronUpIcon className="arrow-icon" />
+              ) : (
+                <ChevronDownIcon className="arrow-icon" />
+              )}
+              {openSubMenu === 'properties' && (
+                <ul className="sub-menu">
+                  <li onClick={() => handleSectionChange('brickyardplaza')}>Brickyard Plaza</li>
+                  <li onClick={() => handleSectionChange('portolaplaza')}>Portola Plaza</li>
+                </ul>
+              )}
             </li>
-          </ul>
-          {isSubMenuOpen1 && (
-            <ul className="sub-menu">
-              <li onClick={() => handlePropertySelection('portolaplaza')}>
-                <BuildingIcon /> Portola Plaza
-              </li>
-              <li onClick={() => handlePropertySelection('brickyardplaza')}>
-                <BuildingIcon /> Brickyard Plaza
-              </li>
-            </ul>
-          )}
-          <ul className="sub-menu-toggle" onClick={toggleSubMenu2}>
-            <li>
-              <Tools /> Property Tools {isSubMenuOpen2 ? <ChevronUpIcon /> : <ChevronDownIcon />}
+            <li
+              className={`has-sub-menu ${openSubMenu === 'mapping' ? 'open' : ''}`}
+              onClick={() => handleSubMenuToggle('mapping')}
+            >
+              <Map /> Mapping
+              {openSubMenu === 'mapping' ? (
+                <ChevronUpIcon className="arrow-icon" />
+              ) : (
+                <ChevronDownIcon className="arrow-icon" />
+              )}
+              {openSubMenu === 'mapping' && (
+                <ul className="sub-menu">
+                  <li onClick={() => handleSectionChange('map-overview')}>Map Overview</li>
+                  <li onClick={() => handleSectionChange('map-locations')}>Saved Locations</li>
+                </ul>
+              )}
             </li>
-          </ul>
-          {isSubMenuOpen2 && (
-            <ul className="sub-menu">
-              <li onClick={() => handleToolClick('Forecaster')}>
-                <BuildingIcon /> Forecaster
-              </li>
-              <li onClick={() => handleToolClick('StressTester')}>
-                <Gauge /> Stress Tester
-              </li>
-              <li onClick={() => handleToolClick('CapTable')}>
-                <Table /> Cap Table
-              </li>
-              <li onClick={() => handleToolClick('SREOTable')}>
-                <FileUpload /> SREO Forms
-              </li>
-              <li onClick={() => handleToolClick('DataRoom')}>
-                <FileUpload /> Data Room
-              </li>
-            </ul>
-          )}
-          <ul className="sub-menu-toggle" onClick={toggleSubMenu3}>
-            <li>
-              <Map /> Mapping Tools {isSubMenuOpen3 ? <ChevronUpIcon /> : <ChevronDownIcon />}
+            <li
+              className={`has-sub-menu ${openSubMenu === 'tasktools' ? 'open' : ''}`}
+              onClick={() => handleSubMenuToggle('tasktools')}
+            >
+              <Tools /> Tooling
+              {openSubMenu === 'tasktools' ? (
+                <ChevronUpIcon className="arrow-icon" />
+              ) : (
+                <ChevronDownIcon className="arrow-icon" />
+              )}
+              {openSubMenu === 'tasktools' && (
+                <ul className="sub-menu">
+                  <li onClick={() => handleSectionChange('brickyardplaza')}>Brickyard Plaza</li>
+                  <li onClick={() => handleSectionChange('portolaplaza')}>Portola Plaza</li>
+                </ul>
+              )}
             </li>
-          </ul>
-          {isSubMenuOpen3 && (
-            <ul className="sub-menu">
-              <li onClick={() => handleToolClick('HeatMap')}>
-                <ChecklistIcon /> Basic Map
-              </li>
-              <li onClick={() => handleToolClick('IdealMap')}>
-                <ChecklistIcon /> Ideal Map
-              </li>
-            </ul>
-          )}
-          <ul className="sub-menu-toggle" onClick={toggleSubMenu4}>
-            <li>
-              <ContractIcon /> Reporting {isSubMenuOpen4 ? <ChevronUpIcon /> : <ChevronDownIcon />}
+            <li
+              className={`has-sub-menu ${openSubMenu === 'reporting' ? 'open' : ''}`}
+              onClick={() => handleSubMenuToggle('reporting')}
+            >
+              <ContractIcon /> Reporting
+              {openSubMenu === 'reporting' ? (
+                <ChevronUpIcon className="arrow-icon" />
+              ) : (
+                <ChevronDownIcon className="arrow-icon" />
+              )}
+              {openSubMenu === 'reporting' && (
+                <ul className="sub-menu">
+                  <li onClick={() => handleSectionChange('financial-reports')}>Financial Reports</li>
+                  <li onClick={() => handleSectionChange('analytics')}>Analytics</li>
+                </ul>
+              )}
             </li>
-            {isSubMenuOpen4 && (
-            <ul className="sub-menu">
-              <li onClick={() => handleToolClick('AicreReport')}>
-                <ChecklistIcon /> AiCRE Report
-              </li>
-            </ul>
-          )}
-          </ul>
-          <ul>
+            <li
+              className={activeSection === 'notifications' ? 'active' : ''}
+              onClick={() => handleSectionChange('notifications')}
+            >
+              <Bell /> Notifications
+            </li>
+            <li
+              className={activeSection === 'settings' ? 'active' : ''}
+              onClick={() => handleSectionChange('settings')}
+            >
+              <CogIcon /> Settings
+            </li>
             <li className="logout-button">
               <SignOutIcon /> Log Out
             </li>
           </ul>
         </nav>
-      </div>
+      </aside>
 
-      <div className="main-content">
-        {activeTool ? (
-          <div className="tool-content">{renderActiveTool()}</div>
-        ) : (
-          <div className="home-content">
-            <div className="header">
-              <div className="portfolio-summary mt-4">
-                <StockTicker />
-                <PortfolioSummary/>
+      {/* Main Content */}
+      <main className={`main-content ${isSidebarOpen ? '' : 'shifted'}`}>
+        {/* Interest Rate Ticker */}
+        <div className="ticker-section">
+          <InterestRateTicker />
+        </div>
+
+        {activeSection === 'overview' && (
+          <>
+            {/* Responsive Layout for PortfolioSummary and DataRoom */}
+            <div className="responsive-container">
+              <div className="responsive-column">
+                <PortfolioSummary />
               </div>
-              <div className="address-table">
-                <div className="main-content mt-8">
-                  <PropertyTable onPropertyClick={handlePropertySelection} />
-                </div>
-              </div>
-              <div className='address-table mt-8'>
-              <MapBoxSearch onAddAddress={handleAddAddress} />
-              </div>
-              <div className="news-section">
-                <div className="news-grid mt-8">
-                  {/* National News */}
-                  <div className="news-card">
-                    <NewsTable newsType="national" />
-                  </div>
-                  {/* Regional News */}
-                  <div className="news-card">
-                    <NewsTable newsType="regional" address="California" />
-                  </div>
-                  {/* Emerging Markets News */}
-                  <div className="news-card">
-                    <NewsTable newsType="emerging" />
-                  </div>
-                </div>
+              <div className="responsive-column">
+                <DataRoom />
               </div>
             </div>
+
+            {/* Full-width PropertyTable */}
+            <div className="full-width-container mb-10">
+              <PropertyTable onPropertyClick={handlePropertyClick} />
+            </div>
+          </>
+        )}
+
+        {/* NewsTable and MapBoxSearch Side by Side */}
+        <div className="responsive-container">
+          <div className="responsive-column">
+            <NewsTable newsType="national" />
+            <NewsTable newsType="regional" />
+            <NewsTable newsType="emerging" />
+          </div>
+          <div className="responsive-column">
+            <MapBoxSearch onAddAddress={handleAddAddress} />
+          </div>
+        </div>
+
+        {/* Display selected address */}
+        {selectedAddress && (
+          <div className="selected-address">
+            <p>Selected Address: {selectedAddress}</p>
           </div>
         )}
-      </div>
 
+      {activeSection === 'property-details' && selectedProperty && (
+                <div className="property-details-section">
+                  <button className="back-button" onClick={handleBackToOverview}>
+                    Back to Overview
+                  </button>
+                  <PropertyDetails property={selectedProperty} />
+                </div>
+              )}
+      </main>
+
+      {/* Styling */}
       <style jsx>{`
-      .dashboard-container {
-        display: flex;
-        height: 100vh;
-        background-color: #f5f7fa;
-        overflow: hidden;
-      }
-
-      .data-visual-container {
-        width: 100%; /* Full width */
-        display: flex;
-        justify-content: center;
-      }
-
-      .portfolio-summary {
-        width: 100%;
-      }
-
-      .address-table {
-        width: 100%;
-        justify-content: center;
-        overflow-x: auto;
-        max-height: 400px;
-      }
-
-      .form-container {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-      }
-
-      .toggle-form-button {
-        margin-top: 55px;
-        background-color: #5fd2d2;
-        color: white;
-        max-width: 250px;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        margin-bottom: 10px;
-        transition: background-color 0.3s ease;
-      }
-
-      .toggle-form-button:hover {
-        background-color: #64e2e2;
-      }
-
-      .profile-container {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 5px;
-      }
-
-      .gear-icon {
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        background-color: #fff;
-        border: 2px solid #ddd;
-        border-radius: 50%;
-        padding: 6px;
-        font-size: 20px;
-        color: #555;
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        transition: background-color 0.3s, transform 0.3s;
-      }
-
-      .gear-icon:hover {
-        color: #5fd2d2;
-        transform: scale(1.15);
-      }
-
-      .hamburger-button {
-        position: fixed;
-        top: 25px;
-        left: 25px;
-        z-index: 1002;
-        background-color: transparent;
-        border: none;
-        color: #333;
-        font-size: 26px;
-        cursor: pointer;
-        display: none;
-      }
-
-      .sidebar {
-        width: 260px;
-        background-color: #fff;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-        border-right: 1px solid #e1e1e1;
-        overflow-y: auto;
-        z-index: 1000;
-        transition: all 0.3s ease;
-      }
-
-      .sidebar.open {
-        left: 0;
-      }
-
-      .logo {
-        margin-bottom: 40px;
-      }
-
-      .nav-menu ul {
-        list-style: none;
-        padding: 0;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .nav-menu li {
-        padding: 16px 22px;
-        font-size: 15px;
-        font-weight: bold;
-        color: #666;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        border-radius: 10px;
-        transition: background-color 0.3s, color 0.3s;
-      }
-
-      .nav-menu li.active,
-      .nav-menu li:hover {
-        color: #5fd2d2;
-        background-color: #f9f9f9;
-        font-weight: bold;
-      }
-
-      .sub-menu-toggle {
-        cursor: pointer;
-        font-size: 16px;
-        padding: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .sub-menu {
-        padding-left: 20px;
-        margin-top: 5px;
-      }
-
-      .sub-menu li {
-        padding: 10px;
-        font-size: 12px;
-        color: #555;
-        cursor: pointer;
-        border-radius: 6px;
-        transition: background-color 0.3s, color 0.3s;
-      }
-
-      .sub-menu li:hover {
-        color: #5fd2d2;
-        background-color: #f3f3f3;
-      }
-
-      .main-content {
-        flex: 1;
-        padding: 30px;
-        overflow-y: auto;
-        background-color: #f5f7fa;
-        transition: all 0.3s ease;
-      }
-
-      .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 40px;
-      }
-
-      .address-management {
-        display: flex;
-        gap: 12px;
-        width: 100%;
-        max-width: 650px;
-        margin-top: 25px;
-      }
-
-      .address-input {
-        flex: 1;
-        padding: 12px;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-      }
-
-      .add-button {
-        background-color: #007bff;
-        color: white;
-        padding: 12px 20px;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .saved-addresses {
-        margin-top: 20px;
-      }
-
-      .saved-addresses ul {
-        list-style: none;
-        padding: 0;
-      }
-
-      .saved-addresses li {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #ddd;
-      }
-
-      .remove-address {
-        background-color: red;
-        color: white;
-        border: none;
-        padding: 6px 10px;
-        border-radius: 8px;
-        cursor: pointer;
-      }
-
-      .filter-buttons {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        width: 100%;
-        margin-top: 5px;
-      }
-
-      .filter-button {
-        background-color: #e9ecef;
-        color: #444;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 15px;
-        transition: background-color 0.3s, color 0.3s;
-        flex: 1;
-      }
-
-      .filter-button.active,
-      .filter-button:hover {
-        background-color: #5fd2d2;
-        color: white;
-      }
-
-      .grid-container {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-        width: 100%;
-      }
-
-      .grid-item {
-        background-color: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        height: 160px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        cursor: pointer;
-        transition: transform 0.3s, box-shadow 0.3s;
-        position: relative;
-      }
-
-      .grid-item:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 18px rgba(0, 0, 0, 0.1);
-      }
-
-      .icon-placeholder {
-        margin-bottom: 10px;
-      }
-
-      .grid-item p {
-        font-size: 15px;
-        color: #757575;
-      }
-
-      .news-section {
-        width: 100%;
-        margin-top: 30px;
-      }
-
-      .news-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-      }
-
-      .news-card {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        display: flex;
-        flex-direction: column;
-      }
-
-      .news-card h4 {
-        margin-bottom: 12px;
-        font-size: 18px;
-        color: #333;
-      }
-
-      @media (max-width: 1200px) {
-        .grid-container {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      @media (max-width: 1024px) {
-        .grid-container {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .news-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .sidebar {
-          width: 220px;
-        }
-      }
-
-      @media (max-width: 768px) {
-      
-        .news-grid {
-          grid-template-columns: 1fr;
-        }
-        .grid-container {
-          grid-template-columns: 1fr;
-        }
-
-        .hamburger-button {
-          display: block;
-        }
-
-        .sidebar {
-          width: 240px;
-          position: fixed;
-          top: 0;
-          bottom: 0;
-          left: -100%;
-          transition: left 0.3s ease;
-        }
-
-        .sidebar.open {
-          left: 0;
-        }
-
-        .main-content {
-          padding: 20px 10px;
-        }
-      }
-
-      @media (max-width: 480px) {
-        .nav-menu ul {
-          flex-wrap: wrap;
-          justify-content: space-evenly;
-        }
-
-        .nav-menu li {
-          flex: 1 0 100%;
-          text-align: center;
-          padding: 8px 0;
-        }
-
-        .sidebar {
-          flex-direction: column;
-          height: auto;
+        .dashboard-layout {
+          display: flex;
+          height: 100vh;
+          overflow: hidden;
+          position: relative;
         }
 
         .header {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .address-management {
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .saved-addresses ul {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 20px;
+          background-color: #1f2937;
+          color: #000;
+          position: fixed;
           width: 100%;
+          z-index: 1100;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
         }
-      }
-    `}</style>
+
+        .header-content {
+          display: flex;
+          align-items: center;
+        }
+
+        .hamburger-button {
+          background-color: transparent;
+          border: none;
+          font-size: 28px;
+          cursor: pointer;
+          color: #60a5fa;
+          margin-right: 10px;
+        }
+
+        .logo-text {
+          font-size: 24px;
+          font-weight: bold;
+          color: #60a5fa;
+          margin: 0;
+        }
+
+        .sidebar {
+          background-color: #1f2937;
+          color: #ffffff;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          border-right: 2px solid #3b82f6;
+          width: 260px;
+          height: 100vh;
+          transition: transform 0.3s ease-in-out;
+          position: fixed;
+          top: 0;
+          left: 0;
+          z-index: 1000;
+          box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .sidebar.closed {
+          transform: translateX(-260px);
+        }
+
+        .sidebar.open {
+          transform: translateX(0);
+        }
+
+        .logo-container {
+          margin-bottom: 20px;
+          text-align: center;
+        }
+
+        .nav-menu ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .nav-menu li {
+          padding: 10px;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          border-radius: 8px;
+          margin-bottom: 50px;
+          transition: background 0.3s, color 0.3s;
+        }
+
+        .nav-menu li.active {
+          background-color: #3b82f6;
+          color: #ffffff;
+        }
+
+        .nav-menu li:hover {
+          background-color: #334155;
+          color: #60a5fa;
+        }
+
+        .nav-menu li svg {
+          margin-right: 10px;
+        }
+
+        .arrow-icon {
+          width: 16px;
+          height: 16px;
+        }
+
+        .has-sub-menu {
+          position: relative;
+        }
+
+        .sub-menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background-color: #1f2937;
+          width: 100%;
+          z-index: 1;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          border-radius: 4px;
+        }
+
+        .sub-menu li {
+          padding: 8px 10px;
+          font-size: 14px;
+          cursor: pointer;
+          color: #b0c4de;
+          transition: color 0.2s;
+          margin-bottom: 10px;
+        }
+
+        .sub-menu li:hover {
+          color: #ffffff;
+          background-color: #334155;
+        }
+
+        .logout-button {
+          margin-top: auto;
+          padding: 12px;
+          background-color: #ef4444;
+          color: #ffffff;
+          cursor: pointer;
+          border-radius: 8px;
+          text-align: center;
+          transition: background 0.3s;
+        }
+
+        .logout-button:hover {
+          background-color: #b91c1c;
+        }
+
+        .main-content {
+          flex: 1;
+          padding: 30px;
+          margin-left: 260px;
+          overflow-y: auto;
+          background-color: #ffffff;
+          transition: margin-left 0.3s ease-in-out;
+        }
+
+        .main-content.shifted {
+          margin-left: 0;
+        }
+
+        .ticker-section {
+          margin-top: 50px;
+        }
+
+        .responsive-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 20px;
+        }
+
+        .responsive-column {
+          background-color: #ffffff;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .full-width-container {
+          margin-top: 20px;
+          background-color: #ffffff;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .selected-address {
+          margin-top: 20px;
+          padding: 10px;
+          background-color: #e5f6ff;
+          border: 1px solid #60a5fa;
+          border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+          .main-content {
+            padding: 20px;
+          }
+
+          .responsive-column,
+          .full-width-container {
+            padding: 15px;
+          }
+
+          .logo-text {
+            font-size: 20px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .responsive-column,
+          .full-width-container {
+            padding: 10px;
+          }
+
+          .main-content {
+            padding: 15px;
+          }
+
+          .nav-menu li {
+            font-size: 14px;
+          }
+
+          .logo-text {
+            font-size: 18px;
+          }
+        }
+      `}</style>
     </div>
   );
 };
 
-export default DashboardAiCRE;
+export default DashboardV2;

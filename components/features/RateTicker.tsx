@@ -1,44 +1,37 @@
 import React, { useState, useEffect } from 'react';
 
 interface InterestRateItem {
-  source: string;       // Source or name, e.g., "SOFR"
-  rate: string;         // Current interest rate value, e.g., "4.840%"
-  previousRate?: string; // Previous interest rate value for correlation
+  index: string; // Name of the rate, e.g., "SOFR 30 day"
+  rate: string;  // Current rate, e.g., "4.840%"
 }
 
 const InterestRateTicker: React.FC = () => {
   const [rateData, setRateData] = useState<InterestRateItem[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
-  // Comprehensive placeholder data for fallback
+  // Placeholder data for fallback
   const placeholderData: InterestRateItem[] = [
-    { source: 'SOFR 30 day', rate: '4.840%', previousRate: '4.750%' },
-    { source: 'Prime', rate: '8.000%', previousRate: '7.750%' },
-    { source: 'LIBOR 30 day', rate: '0.000%', previousRate: '0.100%' },
-    { source: '5 yr Treasury', rate: '3.990%', previousRate: '3.800%' },
-    { source: '10 yr Treasury', rate: '3.880%', previousRate: '3.700%' },
+    { index: 'SOFR 30 day', rate: '4.840%' },
+    { index: 'Prime', rate: '8.000%' },
+    { index: 'LIBOR 30 day', rate: '0.000%' },
+    { index: '5 yr Treasury', rate: '3.990%' },
+    { index: '10 yr Treasury', rate: '3.880%' },
   ];
 
-  // Fetch interest rate data from the API
   const fetchRateData = async () => {
     try {
-      const response = await fetch('/api/interest-rates');
+      const response = await fetch('/api/rates');
+
       if (!response.ok) {
-        throw new Error('Failed to fetch interest rate data');
+        throw new Error(`Failed to fetch interest rate data. Status: ${response.status}`);
       }
+
       const data = await response.json();
-
-      const rateItems: InterestRateItem[] = data.rates.map((rate: any) => ({
-        source: rate.source || "Unknown Source",
-        rate: rate.value || "N/A",
-        previousRate: rate.previousRate || "N/A", // Assuming your API returns previous rates
-      }));
-
-      setRateData(rateItems);
+      setRateData(data.rates); // Adjusted to access the `rates` array from the response
       setIsDataLoaded(true);
     } catch (error) {
       console.error('Error fetching interest rate data:', error);
-      setRateData(placeholderData);  // Use placeholder data on error
+      setRateData(placeholderData); // Use fallback data on error
       setIsDataLoaded(false);
     }
   };
@@ -51,59 +44,26 @@ const InterestRateTicker: React.FC = () => {
     <div className="interest-rate-ticker">
       <div className="ticker-wrapper">
         <div className="ticker-content">
-          {/* Use either fetched data or placeholders if data is not loaded */}
-          {(isDataLoaded ? rateData : placeholderData).map((rate, index) => {
-            const currentRateValue = parseFloat(rate.rate);
-            const previousRateValue = parseFloat(rate.previousRate || '0');
-
-            let colorClass = 'neutral';
-            if (currentRateValue > previousRateValue) {
-              colorClass = 'positive'; // Current rate is greater than previous rate
-            } else if (currentRateValue < previousRateValue) {
-              colorClass = 'negative'; // Current rate is less than previous rate
-            }
-
-            return (
-              <span className="ticker-item" key={index}>
-                <span className="rate-source">{rate.source}</span>: 
-                <span className={`rate-value ${colorClass}`}>{rate.rate}</span>
-                {index < (isDataLoaded ? rateData.length : placeholderData.length) - 1 && '   '} {/* Add spacing between items */}
-              </span>
-            );
-          })}
-          {/* Duplicate the content for continuous scrolling effect */}
-          {(isDataLoaded ? rateData : placeholderData).map((rate, index) => {
-            const currentRateValue = parseFloat(rate.rate);
-            const previousRateValue = parseFloat(rate.previousRate || '0');
-
-            let colorClass = 'neutral';
-            if (currentRateValue > previousRateValue) {
-              colorClass = 'positive';
-            } else if (currentRateValue < previousRateValue) {
-              colorClass = 'negative';
-            }
-
-            return (
-              <span className="ticker-item" key={`${index}-duplicate`}>
-                <span className="rate-source">{rate.source}</span>: 
-                <span className={`rate-value ${colorClass}`}>{rate.rate}</span>
-                {index < (isDataLoaded ? rateData.length : placeholderData.length) - 1 && '   '}
-              </span>
-            );
-          })}
+          {Array(2).fill(isDataLoaded ? rateData : placeholderData).flat().map((rate, index) => (
+            <span className="ticker-item" key={index}>
+              <span className="rate-source">{rate.index}</span>:
+              <span className="rate-value">{rate.rate}</span>
+            </span>
+          ))}
         </div>
       </div>
 
       <style jsx>{`
         .interest-rate-ticker {
           background-color: #333;
-          border-radius: 4px;
-          padding: 10px;
+          border-radius: 8px;
+          padding: 12px 0;
           overflow: hidden;
           color: white;
           white-space: nowrap;
           display: flex;
           align-items: center;
+          font-family: 'Arial', sans-serif;
         }
 
         .ticker-wrapper {
@@ -113,42 +73,32 @@ const InterestRateTicker: React.FC = () => {
 
         .ticker-content {
           display: flex;
-          animation: tickerMove 30s linear infinite; /* Adjust the speed here */
-          width: calc(200%); /* Double the width to accommodate both sets of items */
+          animation: tickerScrollRight 45s linear infinite; /* Adjusted duration for faster scroll */
+          width: calc(200%); /* Ensures content is long enough for continuous scroll */
         }
 
-        @keyframes tickerMove {
+        @keyframes tickerScrollRight {
           0% {
-            transform: translateX(0);
+            transform: translateX(-50%); /* Start from the left */
           }
           100% {
-            transform: translateX(-50%); /* Move by half the width of the duplicated content */
+            transform: translateX(0); /* Move to the right */
           }
         }
 
         .ticker-item {
-          margin-right: 50px;
+          margin-left: 50px; /* Adjust margin if necessary */
+          display: inline-block;
         }
 
         .rate-source {
           font-weight: bold;
-          color: #FFFFFF; // Keep source color neutral
+          color: #ffffff;
         }
 
         .rate-value {
-          margin-left: 5px;
-        }
-
-        .positive {
-          color: #4CAF50; // Green for positive correlation
-        }
-
-        .negative {
-          color: #FF5252; // Red for negative correlation
-        }
-
-        .neutral {
-          color: #FFFFFF; // White for neutral rates
+          margin-left: 8px;
+          color: #4caf50; /* Green for better visibility */
         }
       `}</style>
     </div>

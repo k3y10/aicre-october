@@ -50,7 +50,8 @@ import {
   faPencil,
   faMicrophone,
   faGaugeHigh,
-  faTable
+  faTable,
+  faCalendar
 } from '@fortawesome/free-solid-svg-icons';
 
 interface IconProps extends Omit<FontAwesomeIconProps, 'icon'> {}
@@ -238,4 +239,7 @@ export const Gauge: React.FC<IconProps> = (props) =>
 
 export const Table: React.FC<IconProps> = (props) => 
 <FontAwesomeIcon icon={faTable} {...props} />;
+
+export const Calendar: React.FC<IconProps> = (props) => 
+<FontAwesomeIcon icon={faCalendar} {...props} />;
 

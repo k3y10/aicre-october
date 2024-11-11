@@ -6,43 +6,16 @@ import 'tippy.js/dist/tippy.css';
 
 interface CashFlowProjection {
   month: string;
-  actual: number;
-  projected: number;
-}
-
-interface Tenant {
-  id: string;
-  propertyName: string;
-  type: string;
-  address: string;
-  noi: number;
-  value: number;
-  leverage: number;
-  yieldRate: number;
-  dscr: number;
-  opportunity: string;
-  image: string;
-  latitude: number;
-  longitude: number;
+  actual?: number;
+  projected?: number;
 }
 
 interface Property {
   id: string;
   propertyName: string;
-  city: string;
-  type: string;
-  address: string;
-  noi: number;
-  noiYTD: number;
-  cashYTD: number;
-  netCashFlowThisMonth: number;
-  vacancy: number;
   value: number;
-  leverage: number;
-  yieldRate: number;
-  dscr: number;
-  opportunity: string;
-  tenants?: Tenant[];
+  noi: number;
+  cashYTD: number;
 }
 
 const PortfolioSummary: React.FC = () => {
@@ -73,14 +46,25 @@ const PortfolioSummary: React.FC = () => {
         setTotalCashYTD(totalCashYTDCalc);
         setTotalEquity(totalEquityCalc);
 
-        setCashFlowProjections([
-          { month: 'Jul', actual: 12000, projected: 15000 },
-          { month: 'Aug', actual: -5000, projected: -2000 },
-          { month: 'Sep', actual: 10000, projected: 12000 },
-          { month: 'Oct', actual: 0, projected: 10000 },
-          { month: 'Nov', actual: 8000, projected: 9000 },
-          { month: 'Dec', actual: -3000, projected: 5000 },
-        ]);
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth(); // 0 = January, 11 = December
+
+        // Set actual and projected data for a rolling 3 months past and 3 months forward
+        const projectionData = [
+          { month: 'Aug', actual: 250000 },
+          { month: 'Sep', actual: 100000 },
+          { month: 'Oct', actual: 0 },
+          { month: 'Nov', projected: 80000 },
+          { month: 'Dec', projected: -30000 },
+          { month: 'Jan', projected: 50000 }
+        ];
+
+        const filteredProjections = projectionData.map((data, index) => {
+          const monthIndex = new Date(`${data.month} 1, ${currentDate.getFullYear()}`).getMonth();
+          return monthIndex <= currentMonth ? { month: data.month, actual: data.actual } : { month: data.month, projected: data.projected };
+        });
+
+        setCashFlowProjections(filteredProjections);
       } catch (error) {
         console.error('Error loading property data:', error);
       }
@@ -94,13 +78,17 @@ const PortfolioSummary: React.FC = () => {
     datasets: [
       {
         label: 'Actual',
-        data: cashFlowProjections.map((item) => item.actual),
-        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        data: cashFlowProjections.map((item) => item.actual ?? null),
+        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
       },
       {
         label: 'Projected',
-        data: cashFlowProjections.map((item) => item.projected),
-        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+        data: cashFlowProjections.map((item) => item.projected ?? null),
+        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1,
       },
     ],
   };
@@ -109,13 +97,22 @@ const PortfolioSummary: React.FC = () => {
     plugins: { legend: { display: true } },
     responsive: true,
     maintainAspectRatio: false,
+    scales: {
+      x: {
+        stacked: true,
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+      },
+    },
   };
 
   return (
     <div className="portfolio-summary">
       <div className="header">
-        <h3>CRE Portfolio Summary</h3>
-        <p>{new Date().toLocaleDateString()}</p>
+      <p>{new Date().toLocaleDateString()}</p>
+        <h2>Portfolio Summary</h2>        
       </div>
 
       <div className="summary-details">
@@ -157,12 +154,12 @@ const PortfolioSummary: React.FC = () => {
 
       <style jsx>{`
         .portfolio-summary {
-          background-color: #fff;
-          padding: 20px;
-          border-radius: 6px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-          margin-bottom: 20px;
-          font-family: 'Arial', sans-serif;
+          background-color: #ffffff;
+          padding: 24px;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          margin-bottom: 24px;
+          width: 100%;
         }
 
         .header {
@@ -173,7 +170,8 @@ const PortfolioSummary: React.FC = () => {
         }
 
         h3 {
-          font-size: 18px;
+          font-size: 20px;
+          font-weight: bold;
         }
 
         p {
@@ -183,59 +181,75 @@ const PortfolioSummary: React.FC = () => {
 
         .summary-details {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 15px;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 20px;
           margin-bottom: 20px;
         }
 
         .summary-item {
           background-color: #f8f9fa;
-          padding: 15px;
-          border-radius: 8px;
+          padding: 18px;
+          border-radius: 12px;
           text-align: center;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          transition: transform 0.3s ease;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          transition: transform 0.3s;
         }
 
         .summary-item:hover {
-          transform: scale(1.04);
+          transform: translateY(-5px);
         }
 
         .summary-item p {
-          font-size: 12px;
-          color: #666;
+          font-size: 13px;
+          color: #777;
           margin-bottom: 8px;
         }
 
         .summary-item h3 {
-          font-size: 16px;
-          font-weight: bold;
+          font-size: 18px;
           margin: 0;
+          font-weight: bold;
         }
 
         .cash-flow-projections {
-          margin-top: 20px;
+          margin-top: 24px;
         }
 
         .cash-flow-projections h4 {
-          font-size: 16px;
-          margin-bottom: 10px;
+          font-size: 18px;
+          margin-bottom: 12px;
           text-align: center;
         }
 
         .chart-container {
-          height: 250px; /* Adjust chart height here */
+          height: 300px;
         }
 
         @media (max-width: 1024px) {
           .summary-details {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           }
         }
 
         @media (max-width: 768px) {
+          .portfolio-summary {
+            padding: 16px;
+          }
+
+          .summary-details {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+          }
+
+          .chart-container {
+            height: 250px;
+          }
+        }
+
+        @media (max-width: 480px) {
           .summary-details {
             grid-template-columns: 1fr;
+            gap: 10px;
           }
 
           .chart-container {

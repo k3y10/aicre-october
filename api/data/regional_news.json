@@ -1,3 +1,25 @@
 {
-    "articles": []
+    "articles": [
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://lh3.googleusercontent.com/TJg9dlw8iPpy1NH4LoKp1BGjoVKOHEG6OdSGO9BiKDyT9UUqVxehz-55VM-dxBWe8r6n68xzUg=s0-h12-rw",
+            "url": "https://news.google.com/read/CBMiekFVX3lxTE90eHNJanZ1QVBlcnNCZUh1eGlMR0ZzSl9mV1lJLXVCb2VUcGdrS2h2ZUhJd2J5Z2tkSG4wNjJPbUh5NFNBZWJudjNuS0dET0p5VGpRdk05ZVJhS3RWRUc4Q2NYWVF3TWpZeHU3RnR2LWpJa2hGVFdNbFln?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        },
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://encrypted-tbn0.gstatic.com/faviconV2?url=https://www.bizjournals.com&client=NEWS_360&size=96&type=FAVICON&fallback_opts=TYPE,SIZE,URL",
+            "url": "https://news.google.com/read/CBMinwFBVV95cUxNYjE3OUVmdkRpNmw0b2FXcnVZaThQVl8wSk8wYlJBXzVzVm51VDhyZUFxRjBmUjJ0c1ZvUXNnZ2hUbXpRUkhKZ0dwajhKQXcweDF0bF92YkszT2dlSG5tV3lwMEM0MkpncE9RN1ptY3RoLUZtaWZPaG12WER6TlFxN3B0b2x4aGdMc0JNQy1TNmplcVAwN1ptZWQxMjYyX1E?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        },
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://lh3.googleusercontent.com/QADYqHCBVUHxDcYMaqjJRXRQxWuBEhZNtFIjwx7SaLlD-ZsFhTpwD-2TiHxb6K6cQOeKd21_OQ=s0-h12-rw",
+            "url": "https://news.google.com/read/CBMixwFBVV95cUxQdlN0ZDBSRTRnLUNwVE9ra1FLdXR0Z3Y1b2dDbzNyQVFYdG11dlB5Xy1rWFc5M1QzZUpZU3BIQTgxUHdmVGlCd2hjQzZrc0gxb0FHTkJkQVpiSlRWT0lFUnlFcHZJUUlOUDVIRGxhLUt6RGVtRGdDZnIyS0M1d1daS28xeVc1WGxTV01rS2poLURMUDZ6NnpSa1gzT29kbkwxWWp1SVk5UU05cjd1NFVtRFpxTkxfMGdwSG1DOXRqQl9KRmxPM2dR?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        }
+    ]
 }

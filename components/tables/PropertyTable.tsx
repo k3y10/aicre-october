@@ -20,22 +20,19 @@ const PropertyTable: React.FC<PropertyTableProps> = ({ onPropertyClick }) => {
   useEffect(() => {
     const loadProperties = async () => {
       try {
-        // Define file paths for each property
         const propertyFiles = [
           { id: 'brickyardplaza', path: '/property_types/brickyardplaza.json' },
           { id: 'portolaplaza', path: '/property_types/portolaplaza.json' },
         ];
 
-        // Load JSON data from each file
         const propertyData = await Promise.all(
           propertyFiles.map(async ({ id, path }) => {
             const response = await fetch(path);
             const data = await response.json();
-            return { ...data, id }; // Ensure each property has a unique ID
+            return { ...data, id };
           })
         );
 
-        // Set properties to state
         setProperties(propertyData);
       } catch (error) {
         console.error('Error loading property data:', error);
@@ -46,9 +43,9 @@ const PropertyTable: React.FC<PropertyTableProps> = ({ onPropertyClick }) => {
   }, []);
 
   return (
-    <div className="address-table">
+    <div className="property-table">
       {properties.length === 0 ? (
-        <p className="no-address">No properties added yet.</p>
+        <p className="no-properties">No properties added yet.</p>
       ) : (
         <div className="table-wrapper">
           <table>
@@ -67,16 +64,16 @@ const PropertyTable: React.FC<PropertyTableProps> = ({ onPropertyClick }) => {
                 <tr key={property.id}>
                   <td>
                     <button
-                      className="property-name-button"
+                      className="property-button"
                       onClick={() => onPropertyClick(property.id)}
                     >
                       {property.propertyName}
                     </button>
                   </td>
                   <td>{property.city}</td>
-                  <td>${property.noiYTD.toLocaleString('en-US')}</td>
-                  <td>${property.cashYTD.toLocaleString('en-US')}</td>
-                  <td>${property.netCashFlowThisMonth.toLocaleString('en-US')}</td>
+                  <td>${property.noiYTD.toLocaleString()}</td>
+                  <td>${property.cashYTD.toLocaleString()}</td>
+                  <td>${property.netCashFlowThisMonth.toLocaleString()}</td>
                   <td>{property.vacancy}%</td>
                 </tr>
               ))}
@@ -86,13 +83,15 @@ const PropertyTable: React.FC<PropertyTableProps> = ({ onPropertyClick }) => {
       )}
 
       <style jsx>{`
-        .address-table {
-          margin-top: 10px;
-          width: 100%;
+        .property-table {
+          margin-top: 20px;
+          background-color: #ffffff;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
         }
         .table-wrapper {
           overflow-x: auto;
-          width: 100%;
         }
         table {
           width: 100%;
@@ -100,36 +99,32 @@ const PropertyTable: React.FC<PropertyTableProps> = ({ onPropertyClick }) => {
           font-size: 14px;
         }
         th, td {
-          padding: 10px;
-          border: 1px solid #ccc;
+          padding: 12px;
+          border-bottom: 1px solid #ddd;
           text-align: left;
         }
         th {
-          background-color: #ffffff;
-          font-weight: bold;
+          background-color: #f1f1f1;
         }
-        .no-address {
-          font-style: italic;
-          color: #888;
-        }
-        .property-name-button {
+        .property-button {
           background: none;
           border: none;
           color: #007bff;
-          text-decoration: underline;
           cursor: pointer;
-          font-size: inherit;
-          padding: 0;
+          text-decoration: underline;
         }
-        .property-name-button:hover {
+        .property-button:hover {
           color: #0056b3;
         }
+        .no-properties {
+          padding: 20px;
+          text-align: center;
+          color: #666;
+        }
         @media (max-width: 768px) {
-          table {
-            font-size: 12px;
-          }
           th, td {
             padding: 8px;
+            font-size: 12px;
           }
         }
       `}</style>

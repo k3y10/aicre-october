@@ -1,3 +1,25 @@
 {
-    "articles": []
+    "articles": [
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://lh3.googleusercontent.com/bEviZOovyYONxTlr-VObCROCx6dKCy5Ls3peh-1cWlwd7baRF7jkTnTFBV11n8Ouy0cZSFWUrSo=s0-h12-rw",
+            "url": "https://news.google.com/read/CBMigAJBVV95cUxOOWdKQlBkemQwak44U21tNVpsa1NCbjdSNU52d3NtMFZxMnh3c2ZDYW91c1dqUlE3NnNzTEVPYjhvdGdmM0tGaHJCZFJteHhZZU9wMlAwMFR4cmhGZ0cwQmpyN0hlaHZZNGNJOEVZaWhyRENMTUQ4cjl0U3VFSFFGSDJtWlJUY2k0M3lLcEQ2TnByQXpvUFJ4Rm1zUno2Qm9ybGl6MnFJTlV6NExjQ2ZIRWRFRmp2R3B3d0xJdG9uZWlFZktIVWdndmJ1cy1RSk9NWlh2VUV3VmlDVW9CeUNXOWk0V3VWdkhRZXBxcE93b3A2RXZ1b20wVU5pdjFqQy1s?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        },
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://lh3.googleusercontent.com/-AuHkF7hb4isLMc4bLhcnlm659w_XJ47Fpzr3Zllk7uXpuSuSOuj7f89tXfFkYLzol580OROWQ=s0-h12-rw",
+            "url": "https://news.google.com/read/CBMirAFBVV95cUxQTjJnb0JZbENXOTJaSkdxZHl4Z1hDMzU1RkhySjFOVFZPbWFTSk9BZ2RPRElOY2N0MExzaUhfU3FObWFCOWR3SjNSQlVpZ2YyNXVJUTdOc3RPM3N3WVQwN2FtMWZNUUw2b3dkSk85dS1pNmxuRnZGOTdBRTMxcG50clFxX0M0QWlPZUdmYVBfaXlqNHplVTMwUTRQakpLU2RIWkxWbkVtT0I1Vkox?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        },
+        {
+            "title": "No title available",
+            "text": "No description available",
+            "image": "https://lh3.googleusercontent.com/QADYqHCBVUHxDcYMaqjJRXRQxWuBEhZNtFIjwx7SaLlD-ZsFhTpwD-2TiHxb6K6cQOeKd21_OQ=s0-h12-rw",
+            "url": "https://news.google.com/read/CBMiqAFBVV95cUxPSDJMYndTelptNFpxVUFNcEtyYXdfQW9xT2xCZm9VcC1mYmlhcVRSYjluWXBHTDM5emNRZDNwYllPaGJRczdfMDFNUGFpSVNjb1Y1VWFtZ3NXR1pCODdreHA4TUlrc3lyYXE3SkM4ZEtYTzNIRUYxdll5UjVYU2tTWWp1aGJXaExHQXBkRTR6QjZqdE5PcXZHdlpKcm00Y0VEcU5xYmNKLWs?hl=en-US&gl=US&ceid=US%3Aen",
+            "source": "Unknown source"
+        }
+    ]
 }

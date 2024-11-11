@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Map, { Marker, Popup, ViewStateChangeEvent } from 'react-map-gl';
+import Map, { Marker, Popup, Source, Layer, ViewStateChangeEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { generateCREInsights } from '@/utilities/aiText';
 
@@ -61,6 +61,11 @@ const HeatMap: React.FC = () => {
     longitude: -103.81320935023722,
     zoom: 2,
   });
+  const [selectedLayers, setSelectedLayers] = useState<{ [key: string]: boolean }>({
+    traffic: false,
+    vacancies: false,
+    population: false,
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -101,6 +106,10 @@ const HeatMap: React.FC = () => {
     setLoadingInsights(false);
   };
 
+  const handleLayerToggle = (layer: string) => {
+    setSelectedLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
+  };
+
   const handleViewportChange = (event: ViewStateChangeEvent) => {
     setViewport(event.viewState);
   };
@@ -108,6 +117,32 @@ const HeatMap: React.FC = () => {
   return (
     <div className="heatmapPage">
       <h1>CRE Property Heatmap</h1>
+      <div className="layer-controls">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedLayers.traffic}
+            onChange={() => handleLayerToggle('traffic')}
+          />
+          Traffic Layer
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedLayers.vacancies}
+            onChange={() => handleLayerToggle('vacancies')}
+          />
+          Vacancy Layer
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedLayers.population}
+            onChange={() => handleLayerToggle('population')}
+          />
+          Population Trends
+        </label>
+      </div>
 
       <div className="map-container">
         <Map
@@ -135,24 +170,64 @@ const HeatMap: React.FC = () => {
             </Marker>
           ))}
 
-          {viewport.zoom >= 13 && properties.flatMap((property) => property.tenants || []).map((tenant) => (
-            <Marker
-              key={tenant.id}
-              latitude={tenant.latitude}
-              longitude={tenant.longitude}
-              onClick={() => handlePropertyClick(tenant)}
-            >
-              <div
-                className="marker tenant-marker"
-                style={{ backgroundColor: getColorForType(tenant.type) }}
-                onMouseEnter={() => setHoveredProperty(tenant)}
-                onMouseLeave={() => setHoveredProperty(null)}
-              >
-                {tenant.propertyName}
-              </div>
-            </Marker>
-          ))}
+          {/* Traffic heatmap layer */}
+          {selectedLayers.traffic && (
+            <Source type="geojson" data="/data/traffic-data.geojson">
+              <Layer
+                id="traffic-layer"
+                type="heatmap"
+                paint={{
+                  'heatmap-weight': 0.5,
+                  'heatmap-intensity': 1.2,
+                  'heatmap-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['heatmap-density'],
+                    0, 'rgba(33, 102, 172, 0)',
+                    0.5, 'rgba(103, 169, 207, 0.6)',
+                    1, 'rgba(178, 24, 43, 1)',
+                  ],
+                }}
+              />
+            </Source>
+          )}
 
+          {/* Vacancy layer */}
+          {selectedLayers.vacancies && (
+            <Source type="geojson" data="/data/vacancy-data.geojson">
+              <Layer
+                id="vacancies-layer"
+                type="fill"
+                paint={{
+                  'fill-color': 'rgba(255, 0, 0, 0.4)',
+                  'fill-outline-color': 'rgba(255, 0, 0, 0.8)',
+                }}
+              />
+            </Source>
+          )}
+
+          {/* Population trends layer */}
+          {selectedLayers.population && (
+            <Source type="geojson" data="/data/population-data.geojson">
+              <Layer
+                id="population-layer"
+                type="circle"
+                paint={{
+                  'circle-radius': 8,
+                  'circle-color': [
+                    'step',
+                    ['get', 'change_rate'],
+                    'blue', -5,
+                    'yellow', 0,
+                    'green', 5,
+                  ],
+                  'circle-opacity': 0.6,
+                }}
+              />
+            </Source>
+          )}
+
+          {/* Existing Popups and Markers */}
           {hoveredProperty && (
             <Popup
               latitude={hoveredProperty.latitude}
@@ -191,22 +266,25 @@ const HeatMap: React.FC = () => {
         </Map>
       </div>
 
-      {/* Insights Box */}
-      <div className="insights-box">
-        <h3>Insights</h3>
-        {loadingInsights ? (
-          <div className="loading-spinner">
-            <div className="spinner"></div>
-            <p>Generating insights...</p>
-          </div>
-        ) : (
-          <p>{insights || 'Click on a property to generate insights.'}</p>
-        )}
-      </div>
-
       <style jsx>{`
         .heatmapPage {
           padding: 20px;
+        }
+
+        .layer-controls {
+          margin-bottom: 10px;
+          display: flex;
+          gap: 10px;
+        }
+
+        .layer-controls label {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+        }
+
+        .layer-controls input {
+          margin-right: 5px;
         }
 
         .map-container {
@@ -224,59 +302,6 @@ const HeatMap: React.FC = () => {
           font-size: 12px;
           font-weight: bold;
           text-align: center;
-        }
-
-        .main-property-marker {
-          background-color: black;
-        }
-
-        .tenant-marker {
-          opacity: 0.8;
-        }
-
-        .popup-container {
-          display: flex;
-          flex-direction: column;
-          text-align: center;
-          color: white;
-        }
-
-        .insights-box {
-          margin-top: 20px;
-          padding: 15px;
-          background-color: #333;
-          color: white;
-          border-radius: 6px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        .insights-box h3 {
-          margin-bottom: 10px;
-        }
-
-        .loading-spinner {
-          display: flex;
-          align-items: center;
-        }
-
-        .spinner {
-          border: 4px solid #f3f3f3;
-          border-top: 4px solid #3498db;
-          border-radius: 50%;
-          width: 20px;
-          height: 20px;
-          animation: spin 1s linear infinite;
-          margin-right: 10px;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        h1 {
-          text-align: center;
-          margin-bottom: 20px;
         }
       `}</style>
     </div>
